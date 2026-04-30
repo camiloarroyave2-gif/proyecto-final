@@ -13,7 +13,7 @@ app = FastAPI()
 def home():
     return {"mensaje": "API funcionando"}
 
-# CORS
+# CORSs
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
