@@ -1,14 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 from app.database import get_session
-from app.models import Task
+from app.models import Tarea
 from app.schemas import TaskCreate
 
 router = APIRouter()
 
 @router.post("/tasks")
 def create_task(task: TaskCreate, session: Session = Depends(get_session)):
-    new_task = Task(**task.dict())
+    new_task = Tarea(title=task.title, description=task.description, status=task.status, user_id=task.user_id)
     session.add(new_task)
     session.commit()
     session.refresh(new_task)
@@ -29,7 +29,6 @@ def update_task(task_id: int, task: TaskCreate, session: Session = Depends(get_s
 
     db_task.title = task.title
     db_task.description = task.description
-    db_task.due_date = task.due_date
     db_task.status = task.status
 
     session.add(db_task)
