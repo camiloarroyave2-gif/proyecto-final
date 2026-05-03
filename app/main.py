@@ -1,4 +1,6 @@
 import os
+from contextlib import asynccontextmanager
+import uvicorn
 from fastapi import FastAPI, Depends, HTTPException, status, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -6,18 +8,27 @@ from fastapi.responses import FileResponse
 from sqlmodel import Session, select
 from .database import create_db, get_session
 from .models import Usuario, Tarea
+from .schemas import UserCreate
 from .routes import tasks
 from typing import List
 
-app = FastAPI(title="Gestión de Tareas Inteligente")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    create_db()
+    yield
+
+app = FastAPI(title="Gestión de Tareas Inteligente", lifespan=lifespan)
 
 # Configuración para unir Frontend y Backend
 # Buscamos la carpeta frontend un nivel arriba del directorio app
+# Configuración de rutas de archivos
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FRONTEND_DIR = os.path.join(BASE_DIR, "frontend")
 
 # Servir archivos estáticos (js, css, imágenes)
-if os.path.exists(FRONTEND_DIR):
+if not os.path.exists(FRONTEND_DIR):
+    print(f"ERROR: No se encontró la carpeta frontend en: {FRONTEND_DIR}")
+else:
     app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
 
 # Configuración de CORS para que el frontend pueda comunicarse con el backend
@@ -37,32 +48,30 @@ def read_root():
         return FileResponse(index_path)
     return {"mensaje": "API TaskFlow funcionando. Frontend no detectado en /frontend"}
 
-@app.on_event("startup")
-def on_startup():
-    create_db()
-
 @app.post("/api/users", status_code=status.HTTP_201_CREATED)
-def register_user(user: Usuario, session: Session = Depends(get_session)):
+@app.post("/api/register", status_code=status.HTTP_201_CREATED)
+def register_user(user: UserCreate, session: Session = Depends(get_session)):
     # Verificar si el usuario ya existe
     existing_user = session.exec(select(Usuario).where(Usuario.email == user.email)).first()
     if existing_user:
         raise HTTPException(status_code=400, detail="El email ya está registrado")
-    
-    session.add(user)
+    # Creamos el objeto de la base de datos a partir del esquema
+    new_user = Usuario(email=user.email, password=user.password or "1234")
+    session.add(new_user)
     session.commit()
-    session.refresh(user)
-    return {"message": "Usuario creado con éxito", "user_id": user.id}
+    session.refresh(new_user)
+    return {"message": "Usuario creado con éxito", "user_id": new_user.id}
 
 @app.post("/api/login")
 def login_bypass(credentials: dict = Body(...), session: Session = Depends(get_session)):
     email = credentials.get("email")
-    password = credentials.get("password")
+    raw_password = credentials.get("password")
+    password = str(raw_password) if raw_password else ""
 
-    # Si la contraseña es 1234, permitimos el acceso con cualquier correo
-    if password == "1234":
+    # Bypass de seguridad para desarrollo
+    if password == "1234" or password == "admin" or password == "":
         user = session.exec(select(Usuario).where(Usuario.email == email)).first()
         if not user:
-            # Si el usuario no existe, lo creamos automáticamente
             user = Usuario(email=email, password=password)
             session.add(user)
             session.commit()

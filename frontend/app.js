@@ -147,15 +147,8 @@ async function createTask() {
     }
 }
 
-<<<<<<< HEAD
-async function toggleTask(id, markComplete) {
-    const newStatus = markComplete ? "completada" : "pendiente";
-=======
 // Completa o reabre una tarea según el estado deseado
 async function toggleTask(id, newStatus) {
-    // Enviamos solo el campo status para una actualización parcial más limpia
->>>>>>> b617440 (error en logica en puerto)
-
     try {
         const res = await fetch(`${API}/api/tasks/${id}`, {
             method: "PUT",

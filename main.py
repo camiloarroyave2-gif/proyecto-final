@@ -1,14 +1,4 @@
-<<<<<<< HEAD
-from fastapi import FastAPI
+import uvicorn
 
-app = FastAPI()
-
-@app.get("/")
-def home():
-    return {"message": "API funcionando 🔥"}
-
-@app.get("/xd")
-def xd():
-    return {"message": "viva el vicio"}
-=======
->>>>>>> b617440 (error en logica en puerto)
+if __name__ == "__main__":
+    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)

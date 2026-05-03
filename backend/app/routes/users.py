@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
 from app.database import get_session
-from app.models import User
-from app.schemas import UserCreate, UserLogin
+from app.models import Usuario as User
+from app.schemas import UserCreate
 import hashlib
 
 router = APIRouter()
@@ -26,7 +26,7 @@ def create_user(user: UserCreate, session: Session = Depends(get_session)):
 
 
 @router.post("/login")
-def login(user: UserLogin, session: Session = Depends(get_session)):
+def login(user: UserCreate, session: Session = Depends(get_session)):
     db_user = session.exec(
         select(User).where(
             User.email == user.email,
