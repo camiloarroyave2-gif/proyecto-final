@@ -1,8 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session, select
-from app.database import get_session
-from app.models import Usuario
-from app.schemas import UserCreate
+from ..database import get_session
+from ..models import Usuario
+from ..schemas import UserCreate
 
 router = APIRouter()
 

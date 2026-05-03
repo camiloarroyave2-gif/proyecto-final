@@ -1,12 +1,24 @@
-from fastapi import FastAPI, Depends, HTTPException, status
+import os
+from fastapi import FastAPI, Depends, HTTPException, status, Body
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from sqlmodel import Session, select
 from .database import create_db, get_session
 from .models import Usuario, Tarea
-from .schemas import UserCreate, TaskCreate
+from .routes import tasks
 from typing import List
 
-app = FastAPI()
+app = FastAPI(title="Gestión de Tareas Inteligente")
+
+# Configuración para unir Frontend y Backend
+# Buscamos la carpeta frontend un nivel arriba del directorio app
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+FRONTEND_DIR = os.path.join(BASE_DIR, "frontend")
+
+# Servir archivos estáticos (js, css, imágenes)
+if os.path.exists(FRONTEND_DIR):
+    app.mount("/static", StaticFiles(directory=FRONTEND_DIR), name="static")
 
 # Configuración de CORS para que el frontend pueda comunicarse con el backend
 app.add_middleware(
@@ -17,84 +29,70 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/")
+def read_root():
+    """Sirve el index.html del frontend o un mensaje de estado."""
+    index_path = os.path.join(FRONTEND_DIR, "index.html")
+    if os.path.exists(index_path):
+        return FileResponse(index_path)
+    return {"mensaje": "API TaskFlow funcionando. Frontend no detectado en /frontend"}
+
 @app.on_event("startup")
 def on_startup():
     create_db()
 
-@app.post("/api/register", status_code=status.HTTP_201_CREATED)
-def register(user: UserCreate, session: Session = Depends(get_session)):
-    # Verificar si el usuario ya existe
-    statement = select(Usuario).where(Usuario.email == user.email)
-    existing_user = session.exec(statement).first()
-    if existing_user:
-        raise HTTPException(status_code=400, detail="El email ya está en uso")
-    
-    db_user = Usuario(email=user.email, password=user.password)
-    session.add(db_user)
-    session.commit()
-    session.refresh(db_user)
-    return {"message": "Usuario creado", "user_id": db_user.id}
-
 @app.post("/api/users", status_code=status.HTTP_201_CREATED)
-def register_user(user: UserCreate, session: Session = Depends(get_session)):
-    statement = select(Usuario).where(Usuario.email == user.email)
-    existing_user = session.exec(statement).first()
+def register_user(user: Usuario, session: Session = Depends(get_session)):
+    # Verificar si el usuario ya existe
+    existing_user = session.exec(select(Usuario).where(Usuario.email == user.email)).first()
     if existing_user:
-        raise HTTPException(status_code=400, detail="El email ya está en uso")
+        raise HTTPException(status_code=400, detail="El email ya está registrado")
     
-    db_user = Usuario(email=user.email, password=user.password)
-    session.add(db_user)
+    session.add(user)
     session.commit()
-    session.refresh(db_user)
-    return {"message": "Usuario creado", "user_id": db_user.id}
+    session.refresh(user)
+    return {"message": "Usuario creado con éxito", "user_id": user.id}
 
 @app.post("/api/login")
-def login(user: UserCreate, session: Session = Depends(get_session)):
-    statement = select(Usuario).where(Usuario.email == user.email, Usuario.password == user.password)
-    db_user = session.exec(statement).first()
-    if not db_user:
-        raise HTTPException(status_code=401, detail="Credenciales incorrectas")
-    return {"user_id": db_user.id}
+def login_bypass(credentials: dict = Body(...), session: Session = Depends(get_session)):
+    email = credentials.get("email")
+    password = credentials.get("password")
 
-@app.get("/api/tasks/{user_id}", response_model=List[Tarea])
-def get_tasks(user_id: int, session: Session = Depends(get_session)):
-    statement = select(Tarea).where(Tarea.user_id == user_id)
-    return session.exec(statement).all()
+    # Si la contraseña es 1234, permitimos el acceso con cualquier correo
+    if password == "1234":
+        user = session.exec(select(Usuario).where(Usuario.email == email)).first()
+        if not user:
+            # Si el usuario no existe, lo creamos automáticamente
+            user = Usuario(email=email, password=password)
+            session.add(user)
+            session.commit()
+            session.refresh(user)
+        return {"user_id": user.id, "email": user.email, "message": "Acceso concedido"}
 
-@app.post("/api/tasks")
-def create_task(task: TaskCreate, session: Session = Depends(get_session)):
-    # Notar que ignoramos due_date porque el modelo Tarea no lo tiene
-    db_task = Tarea(
-        title=task.title,
-        description=task.description,
-        status=task.status,
-        user_id=task.user_id
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED, 
+        detail="Credenciales incorrectas. Use '1234' para acceder con cualquier correo."
     )
-    session.add(db_task)
-    session.commit()
-    session.refresh(db_task)
-    return db_task
 
-@app.put("/api/tasks/{task_id}")
-def update_task(task_id: int, task_data: TaskCreate, session: Session = Depends(get_session)):
-    db_task = session.get(Tarea, task_id)
-    if not db_task:
-        raise HTTPException(status_code=404, detail="Tarea no encontrada")
+@app.get("/api/profile/{user_id}")
+def get_profile(user_id: int, session: Session = Depends(get_session)):
+    user = session.get(Usuario, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Usuario no encontrado")
     
-    db_task.title = task_data.title
-    db_task.description = task_data.description
-    db_task.status = task_data.status
+    # Estadísticas inteligentes
+    tareas = session.exec(select(Tarea).where(Tarea.user_id == user_id)).all()
+    total = len(tareas)
+    completadas = len([t for t in tareas if t.status == "completada"])
     
-    session.add(db_task)
-    session.commit()
-    session.refresh(db_task)
-    return db_task
+    return {
+        "email": user.email,
+        "stats": {
+            "total": total,
+            "completadas": completadas,
+            "pendientes": total - completadas
+        }
+    }
 
-@app.delete("/api/tasks/{task_id}")
-def delete_task(task_id: int, session: Session = Depends(get_session)):
-    db_task = session.get(Tarea, task_id)
-    if not db_task:
-        raise HTTPException(status_code=404, detail="Tarea no encontrada")
-    session.delete(db_task)
-    session.commit()
-    return {"ok": True}
+# Inclusión de routers con el prefijo /api para coincidir con el frontend
+app.include_router(tasks.router, prefix="/api")

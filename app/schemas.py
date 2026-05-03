@@ -6,8 +6,8 @@ class UserCreate(BaseModel):
     password: str
 
 class TaskCreate(BaseModel):
-    title: str = "Actualizado"
-    description: str = ""
-    due_date: str = ""
-    status: str = "pendiente"
-    user_id: Optional[int] = None
+    title: str
+    description: Optional[str] = ""
+    status: Optional[str] = "pendiente"
+    priority: Optional[str] = "media"
+    user_id: int

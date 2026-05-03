@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 from fastapi import FastAPI
 
 app = FastAPI()
@@ -9,3 +10,5 @@ def home():
 @app.get("/xd")
 def xd():
     return {"message": "viva el vicio"}
+=======
+>>>>>>> b617440 (error en logica en puerto)

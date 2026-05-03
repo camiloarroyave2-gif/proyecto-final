@@ -670,7 +670,7 @@
             <div id="userStatus" class="user-status hidden">
                 <span class="user-badge">
                     <span>●</span>
-                    <span id="userEmail"></span>
+                    <span id="userEmail" onclick="toggleProfile()" style="cursor:pointer"></span>
                 </span>
                 <button onclick="logout()" class="btn-logout">Salir</button>
             </div>
@@ -728,6 +728,14 @@
                             <label for="title" class="input-label">Título</label>
                             <input type="text" id="title" placeholder="¿Qué necesitas hacer?" maxlength="100">
                         </div>
+                        <div class="input-group">
+                            <label for="priority" class="input-label">Prioridad</label>
+                            <select id="priority" style="background:rgba(255,255,255,0.05); border:1px solid var(--border); color:var(--text); padding:10px; border-radius:10px; outline:none;">
+                                <option value="baja">Baja</option>
+                                <option value="media" selected>Media</option>
+                                <option value="alta">Alta</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="form-row">
                         <div class="input-group flex-grow">
@@ -743,6 +751,18 @@
             </div>
 
             <div id="taskMessage" class="message hidden"></div>
+
+            <!-- PROFILE VIEW (Opcional/Toggle) -->
+            <div id="profileView" class="task-form-card hidden" style="margin-bottom:24px; border-color:var(--lime);">
+                <p class="app-eyebrow">// Estadísticas del Usuario</p>
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div>
+                        <p id="profileEmail" style="font-weight:bold; font-size:18px;"></p>
+                        <p id="profileStatus" style="color:var(--text-dim); font-size:13px;"></p>
+                    </div>
+                    <button onclick="toggleProfile()" class="btn btn-secondary">Cerrar Perfil</button>
+                </div>
+            </div>
 
             <div class="task-list-container">
                 <div class="task-list-header">
@@ -765,62 +785,6 @@
         &copy; 2026 TaskFlow — Gestión inteligente de tareas
     </footer>
 
-    <script src="app.js"></script>
-
-    <!-- Demo helper: enhanced task rendering (drop if app.js handles it) -->
-    <script>
-        // Helper to show messages with type
-        function showMessage(elId, text, type='error') {
-            const el = document.getElementById(elId);
-            if (!el) return;
-            el.textContent = text;
-            el.className = `message ${type}`;
-        }
-
-        // Enhanced task renderer — call this from app.js if desired
-        function renderTaskItem(task) {
-            const li = document.createElement('li');
-            li.className = `task-item${task.completed ? ' completed' : ''}`;
-            li.dataset.id = task.id;
-            const date = task.created_at ? new Date(task.created_at).toLocaleDateString('es', {day:'2-digit',month:'short'}) : '';
-            li.innerHTML = `
-                <div class="task-check-wrap">
-                    <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''}
-                           onchange="toggleTask(${task.id}, this.checked)">
-                </div>
-                <div class="task-content">
-                    <div class="task-title">${escapeHTML(task.title)}</div>
-                    ${task.description ? `<div class="task-description">${escapeHTML(task.description)}</div>` : ''}
-                    <div class="task-meta">
-                        <span class="task-status-dot ${task.completed ? 'done' : ''}"></span>
-                        <span class="task-date">${date}</span>
-                    </div>
-                </div>
-                <div class="task-actions">
-                    <button class="btn-task-action btn-task-toggle" onclick="toggleTask(${task.id}, ${!task.completed})">
-                        ${task.completed ? 'Reabrir' : 'Completar'}
-                    </button>
-                    <button class="btn-task-action" onclick="deleteTask(${task.id})">Borrar</button>
-                </div>
-            `;
-            return li;
-        }
-
-        function escapeHTML(str) {
-            return String(str)
-                .replace(/&/g,'&amp;').replace(/</g,'&lt;')
-                .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-        }
-
-        // Enter key on auth inputs
-        document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('password')?.addEventListener('keydown', e => {
-                if (e.key === 'Enter') login?.();
-            });
-            document.getElementById('title')?.addEventListener('keydown', e => {
-                if (e.key === 'Enter') createTask?.();
-            });
-        });
-    </script>
+    <script src="/static/app.js"></script>
 </body>
 </html>

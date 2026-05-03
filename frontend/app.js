@@ -1,4 +1,5 @@
-const API = "http://127.0.0.1:8000";
+// Si el frontend se sirve desde el mismo servidor que el backend, la API puede ser relativa
+const API = ""; // Al usar app.mount y FileResponse, podemos usar rutas relativas
 let userId = null;
 let currentEmail = "";
 
@@ -82,7 +83,7 @@ async function login() {
         });
 
         if (!res.ok) {
-            showAuthMessage("Credenciales incorrectas", "error");
+            showAuthMessage("Credenciales incorrectas. Prueba con la contraseña '1234'", "error");
             return;
         }
 
@@ -108,8 +109,13 @@ async function createTask() {
         return;
     }
 
-    const title       = document.getElementById("title").value.trim();
-    const description = document.getElementById("description").value.trim();
+    const titleInput = document.getElementById("title");
+    const descInput  = document.getElementById("description");
+    const priorityInput = document.getElementById("priority"); // Asumiendo que existe un <select id="priority">
+
+    const title       = titleInput.value.trim();
+    const description = descInput.value.trim();
+    const priority    = priorityInput ? priorityInput.value : "media";
 
     if (!title) {
         showTaskMessage("El título es obligatorio", "error");
@@ -120,12 +126,17 @@ async function createTask() {
         const res = await fetch(`${API}/api/tasks`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ title, description, user_id: userId })
+            body: JSON.stringify({ 
+                title, 
+                description, 
+                priority,
+                user_id: userId 
+            })
         });
 
         if (res.ok) {
-            document.getElementById("title").value       = "";
-            document.getElementById("description").value = "";
+            titleInput.value = "";
+            descInput.value = "";
             showTaskMessage("Tarea creada", "success");
             loadTasks();
         } else {
@@ -136,8 +147,14 @@ async function createTask() {
     }
 }
 
+<<<<<<< HEAD
 async function toggleTask(id, markComplete) {
     const newStatus = markComplete ? "completada" : "pendiente";
+=======
+// Completa o reabre una tarea según el estado deseado
+async function toggleTask(id, newStatus) {
+    // Enviamos solo el campo status para una actualización parcial más limpia
+>>>>>>> b617440 (error en logica en puerto)
 
     try {
         const res = await fetch(`${API}/api/tasks/${id}`, {
@@ -147,7 +164,7 @@ async function toggleTask(id, markComplete) {
         });
 
         if (res.ok) {
-            showTaskMessage(markComplete ? "Tarea completada ✓" : "Tarea reabierta", "success");
+            showTaskMessage(newStatus === "completada" ? "Tarea completada ✓" : "Tarea reabierta", "success");
         } else {
             showTaskMessage("Error al actualizar la tarea", "error");
         }
@@ -169,6 +186,29 @@ async function deleteTask(id) {
     }
 
     loadTasks();
+}
+
+/* ── PERFIL ── */
+async function toggleProfile() {
+    const view = document.getElementById("profileView");
+    if (!view.classList.contains("hidden")) {
+        view.classList.add("hidden");
+        return;
+    }
+
+    try {
+        const res = await fetch(`${API}/api/profile/${userId}`);
+        const data = await res.json();
+        
+        document.getElementById("profileEmail").textContent = data.email;
+        document.getElementById("profileStatus").textContent = 
+            `Has completado ${data.stats.completadas} de ${data.stats.total} tareas totales.`;
+        
+        view.classList.remove("hidden");
+        view.scrollIntoView({ behavior: 'smooth' });
+    } catch {
+        showTaskMessage("No se pudo cargar el perfil", "error");
+    }
 }
 
 /* ── STATS ── */
@@ -255,6 +295,47 @@ async function loadTasks() {
         `;
     }
 }
+
+function renderTaskItem(task) {
+    const li = document.createElement("li");
+    const isDone = task.status === 'completada';
+    li.className = `task-item ${isDone ? 'completed' : ''}`;
+    
+    const priorityClass = `priority-${task.priority || 'media'}`;
+    const nextStatus = isDone ? 'pendiente' : 'completada';
+    const date = task.created_at ? new Date(task.created_at).toLocaleDateString() : '';
+    
+    li.innerHTML = `
+        <div class="task-check-wrap">
+            <input type="checkbox" class="task-checkbox" ${isDone ? 'checked' : ''}>
+        </div>
+        <div class="task-content">
+            <div class="task-title" style="${isDone ? 'text-decoration:line-through' : ''}">${escapeHtml(task.title)}</div>
+            <div class="task-description">${escapeHtml(task.description || '')}</div>
+            <div class="task-meta">
+                <span class="task-status-dot ${isDone ? 'done' : ''}"></span>
+                <span class="task-date" style="text-transform:uppercase; font-size:10px; color:var(--lime); opacity:0.8;">${task.priority}</span>
+                <span class="task-date">${date}</span>
+            </div>
+        </div>
+        <div class="task-actions">
+            <button class="btn-task-action btn-task-toggle">${isDone ? 'Reabrir' : 'Completar'}</button>
+            <button class="btn-task-action btn-delete">Borrar</button>
+        </div>
+    `;
+
+    li.querySelector(".task-checkbox").onchange = () => toggleTask(task.id, nextStatus);
+    li.querySelector(".btn-task-toggle").onclick = () => toggleTask(task.id, nextStatus);
+    li.querySelector(".btn-delete").onclick = () => deleteTask(task.id);
+
+    return li;
+}
+
+/* ── INICIALIZACIÓN ── */
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('password')?.addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
+    document.getElementById('title')?.addEventListener('keydown', e => { if (e.key === 'Enter') createTask(); });
+});
 
 /* ── UTILS ── */
 function escapeHtml(text) {

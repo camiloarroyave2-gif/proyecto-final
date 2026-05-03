@@ -1,6 +1,11 @@
-from sqlmodel import SQLModel, create_engine, Session
+from sqlmodel import create_engine, SQLModel, Session
 
-engine = create_engine("sqlite:///database.db", echo=True)
+sqlite_file_name = "database.db"
+sqlite_url = f"sqlite:///{sqlite_file_name}"
+
+# check_same_thread=False es necesario para SQLite y FastAPI
+connect_args = {"check_same_thread": False}
+engine = create_engine(sqlite_url, echo=False, connect_args=connect_args)
 
 def create_db():
     SQLModel.metadata.create_all(engine)
