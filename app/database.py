@@ -1,9 +1,14 @@
+import os
 from sqlmodel import create_engine, SQLModel, Session
 
-sqlite_file_name = "database.db"
-sqlite_url = f"sqlite:///{sqlite_file_name}"
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+DB_DIR = os.path.join(BASE_DIR, "data")
+os.makedirs(DB_DIR, exist_ok=True)
 
-# check_same_thread=False es necesario para SQLite y FastAPI
+sqlite_file_name = "database.db"
+sqlite_path = os.path.join(DB_DIR, sqlite_file_name)
+sqlite_url = f"sqlite:///{sqlite_path}"
+
 connect_args = {"check_same_thread": False}
 engine = create_engine(sqlite_url, echo=False, connect_args=connect_args)
 
