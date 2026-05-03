@@ -1,13 +1,19 @@
 from sqlmodel import SQLModel, create_engine, Session
+from contextlib import contextmanager
 
-engine = create_engine("sqlite:///database.db", echo=True)
+engine = create_engine("sqlite:///database.db")
 
-def create_db():
+
+def create_db_and_tables():
     SQLModel.metadata.create_all(engine)
 
-def get_session():
-    session = Session(engine)
-    try:
+
+@contextmanager
+def get_session_context():
+    with Session(engine) as session:
         yield session
-    finally:
-        session.close()
+
+
+def get_session():
+    with Session(engine) as session:
+        yield session

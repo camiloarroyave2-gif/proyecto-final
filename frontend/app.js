@@ -136,7 +136,6 @@ async function createTask() {
     }
 }
 
-// Completa o reabre una tarea según el estado deseado
 async function toggleTask(id, markComplete) {
     const newStatus = markComplete ? "completada" : "pendiente";
 
@@ -144,12 +143,7 @@ async function toggleTask(id, markComplete) {
         const res = await fetch(`${API}/api/tasks/${id}`, {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                title:       "Actualizado",
-                description: "",
-                due_date:    "",
-                status:      newStatus
-            })
+            body: JSON.stringify({ status: newStatus })
         });
 
         if (res.ok) {
