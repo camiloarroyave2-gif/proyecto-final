@@ -14,5 +14,9 @@ class Tarea(SQLModel, table=True):
     description: str = ""
     status: str = Field(default="pendiente")
     priority: str = Field(default="media")
+    teacher: str = Field(default="")
+    task_date: str = Field(default="")
+    task_time: str = Field(default="")
+    academic_year: str = Field(default="")
     created_at: datetime = Field(default_factory=datetime.utcnow)
     user_id: int = Field(foreign_key="usuario.id", index=True)

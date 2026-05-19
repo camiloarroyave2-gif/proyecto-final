@@ -10,4 +10,8 @@ class TaskCreate(BaseModel):
     description: Optional[str] = ""
     status: Optional[str] = "pendiente"
     priority: Optional[str] = "media"
+    teacher: Optional[str] = ""
+    task_date: Optional[str] = ""
+    task_time: Optional[str] = ""
+    academic_year: Optional[str] = ""
     user_id: int

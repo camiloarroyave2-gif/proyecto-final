@@ -48,8 +48,12 @@ def read_root():
         return FileResponse(index_path)
     return {"mensaje": "API TaskFlow funcionando. Frontend no detectado en /frontend"}
 
-@app.post("/api/users", status_code=status.HTTP_201_CREATED)
-@app.post("/api/register", status_code=status.HTTP_201_CREATED)
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon():
+    return FileResponse(os.path.join(FRONTEND_DIR, "favicon.ico")) if os.path.exists(os.path.join(FRONTEND_DIR, "favicon.ico")) else None
+
+@app.post("/api/users", status_code=status.HTTP_201_CREATED, tags=["Auth"])
+@app.post("/api/register", status_code=status.HTTP_201_CREATED, tags=["Auth"])
 def register_user(user: UserCreate, session: Session = Depends(get_session)):
     # Verificar si el usuario ya existe
     existing_user = session.exec(select(Usuario).where(Usuario.email == user.email)).first()
@@ -62,15 +66,17 @@ def register_user(user: UserCreate, session: Session = Depends(get_session)):
     session.refresh(new_user)
     return {"message": "Usuario creado con éxito", "user_id": new_user.id}
 
-@app.post("/api/login")
+@app.post("/api/login", tags=["Auth"])
 def login_bypass(credentials: dict = Body(...), session: Session = Depends(get_session)):
     email = credentials.get("email")
     raw_password = credentials.get("password")
     password = str(raw_password) if raw_password else ""
+    
+    # Buscar al usuario en la base de datos
+    user = session.exec(select(Usuario).where(Usuario.email == email)).first()
 
     # Bypass de seguridad para desarrollo
     if password == "1234" or password == "admin" or password == "":
-        user = session.exec(select(Usuario).where(Usuario.email == email)).first()
         if not user:
             user = Usuario(email=email, password=password)
             session.add(user)
@@ -78,12 +84,16 @@ def login_bypass(credentials: dict = Body(...), session: Session = Depends(get_s
             session.refresh(user)
         return {"user_id": user.id, "email": user.email, "message": "Acceso concedido"}
 
+    # Verificación normal si no se usa el bypass
+    if user and user.password == password:
+        return {"user_id": user.id, "email": user.email, "message": "Acceso concedido"}
+
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED, 
         detail="Credenciales incorrectas. Use '1234' para acceder con cualquier correo."
     )
 
-@app.get("/api/profile/{user_id}")
+@app.get("/api/profile/{user_id}", tags=["Perfil"])
 def get_profile(user_id: int, session: Session = Depends(get_session)):
     user = session.get(Usuario, user_id)
     if not user:
@@ -104,4 +114,4 @@ def get_profile(user_id: int, session: Session = Depends(get_session)):
     }
 
 # Inclusión de routers con el prefijo /api para coincidir con el frontend
-app.include_router(tasks.router, prefix="/api")
+app.include_router(tasks.router, prefix="/api", tags=["Tareas"])

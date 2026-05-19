@@ -111,11 +111,19 @@ async function createTask() {
 
     const titleInput = document.getElementById("title");
     const descInput  = document.getElementById("description");
-    const priorityInput = document.getElementById("priority"); // Asumiendo que existe un <select id="priority">
+    const priorityInput = document.getElementById("priority");
+    const teacherInput = document.getElementById("teacher");
+    const dateInput = document.getElementById("task_date");
+    const timeInput = document.getElementById("task_time");
+    const yearInput = document.getElementById("academic_year");
 
     const title       = titleInput.value.trim();
     const description = descInput.value.trim();
     const priority    = priorityInput ? priorityInput.value : "media";
+    const teacher     = teacherInput ? teacherInput.value.trim() : "";
+    const task_date   = dateInput ? dateInput.value : "";
+    const task_time   = timeInput ? timeInput.value : "";
+    const academic_year = yearInput ? yearInput.value.trim() : "";
 
     if (!title) {
         showTaskMessage("El título es obligatorio", "error");
@@ -130,6 +138,10 @@ async function createTask() {
                 title, 
                 description, 
                 priority,
+                teacher,
+                task_date,
+                task_time,
+                academic_year,
                 user_id: userId 
             })
         });
@@ -137,6 +149,10 @@ async function createTask() {
         if (res.ok) {
             titleInput.value = "";
             descInput.value = "";
+            if (teacherInput) teacherInput.value = "";
+            if (dateInput) dateInput.value = "";
+            if (timeInput) timeInput.value = "";
+            if (yearInput) yearInput.value = "";
             showTaskMessage("Tarea creada", "success");
             loadTasks();
         } else {
@@ -298,6 +314,11 @@ function renderTaskItem(task) {
     const nextStatus = isDone ? 'pendiente' : 'completada';
     const date = task.created_at ? new Date(task.created_at).toLocaleDateString() : '';
     
+    const teacherInfo = task.teacher ? `👨‍🏫 ${escapeHtml(task.teacher)}` : '';
+    const taskDateInfo = task.task_date ? `📅 ${task.task_date}` : '';
+    const taskTimeInfo = task.task_time ? `🕐 ${task.task_time}` : '';
+    const yearInfo = task.academic_year ? `📚 ${task.academic_year}` : '';
+    
     li.innerHTML = `
         <div class="task-check-wrap">
             <input type="checkbox" class="task-checkbox" ${isDone ? 'checked' : ''}>
@@ -309,6 +330,12 @@ function renderTaskItem(task) {
                 <span class="task-status-dot ${isDone ? 'done' : ''}"></span>
                 <span class="task-date" style="text-transform:uppercase; font-size:10px; color:var(--lime); opacity:0.8;">${task.priority}</span>
                 <span class="task-date">${date}</span>
+            </div>
+            <div class="task-meta" style="margin-top:4px;">
+                ${teacherInfo ? `<span class="task-date" style="color:var(--text-dim);">${teacherInfo}</span>` : ''}
+                ${taskDateInfo ? `<span class="task-date" style="color:var(--text-dim);">${taskDateInfo}</span>` : ''}
+                ${taskTimeInfo ? `<span class="task-date" style="color:var(--text-dim);">${taskTimeInfo}</span>` : ''}
+                ${yearInfo ? `<span class="task-date" style="color:var(--text-dim);">${yearInfo}</span>` : ''}
             </div>
         </div>
         <div class="task-actions">

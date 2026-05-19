@@ -3,9 +3,9 @@ from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlmodel import Session, select
 
-from database import create_db
-from models import Usuario
-from db import get_session
+from backend.database import create_db
+from backend.models import Usuario
+from backend.db import get_session
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

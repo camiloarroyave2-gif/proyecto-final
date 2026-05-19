@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Body
 from sqlmodel import Session, select
 from app.database import get_session
-from app.models import Tarea as Task
+from app.models import Task
 from typing import Dict, Any
 
 router = APIRouter()

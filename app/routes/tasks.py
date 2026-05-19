@@ -21,6 +21,11 @@ def create_task(task_data: Dict[str, Any] = Body(...), session: Session = Depend
     session.refresh(new_task)
     return new_task
 
+@router.get("/tasks")
+def tasks_root():
+    return {"message": "Para obtener tareas, debes proporcionar un ID de usuario: /api/tasks/{user_id}"}
+
+
 @router.get("/tasks/{user_id}")
 def get_tasks(user_id: int, session: Session = Depends(get_session)):
     statement = select(Tarea).where(Tarea.user_id == user_id).order_by(

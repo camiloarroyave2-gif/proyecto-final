@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TaskFlow — Gestión de Tareas</title>
+    <title>Tareas humildes — Gestión de Tareas</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Manrope:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
@@ -682,7 +682,7 @@
         <!-- AUTH -->
         <section id="authSection" class="auth-section">
             <div class="auth-card">
-                <p class="auth-eyebrow">// Bienvenido</p>
+                <p class="auth-eyebrow">// Bienvenido loca</p>
                 <h1>Organiza.<br>Ejecuta.<br>Logra.</h1>
                 <p class="auth-subtitle">Tu espacio de trabajo para tareas que importan.</p>
 
@@ -710,7 +710,7 @@
                 <div class="app-header-top">
                     <div>
                         <p class="app-eyebrow">// Panel de control</p>
-                        <h2>Mis Tareas</h2>
+                        <h2>Mis tareas</h2>
                     </div>
                     <div class="task-stats">
                         <span class="stat-badge stat-total">Total <strong id="totalTasks">0</strong></span>
@@ -741,6 +741,24 @@
                         <div class="input-group flex-grow">
                             <label for="description" class="input-label">Descripción (opcional)</label>
                             <input type="text" id="description" placeholder="Añade detalles..." maxlength="250">
+                        </div>
+                        <div class="input-group">
+                            <label for="teacher" class="input-label">Profesor</label>
+                            <input type="text" id="teacher" placeholder="Nombre del profesor" maxlength="100">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="input-group">
+                            <label for="task_date" class="input-label">Fecha</label>
+                            <input type="date" id="task_date">
+                        </div>
+                        <div class="input-group">
+                            <label for="task_time" class="input-label">Hora</label>
+                            <input type="time" id="task_time">
+                        </div>
+                        <div class="input-group">
+                            <label for="academic_year" class="input-label">Año</label>
+                            <input type="text" id="academic_year" placeholder="Ej: 2026" maxlength="4">
                         </div>
                         <button onclick="createTask()" class="btn btn-primary btn-create">
                             <span class="btn-icon">+</span>
