@@ -1,11 +1,19 @@
 from sqlmodel import SQLModel, Field
 from datetime import datetime
+import bcrypt
 
 class Usuario(SQLModel, table=True):
     __tablename__: str = "usuario"
     id: int | None = Field(default=None, primary_key=True)
-    email: str = Field(unique=True, index=True)
-    password: str
+    nombre: str
+    correo: str = Field(unique=True, index=True)
+    password_hash: str
+
+    def set_password(self, password: str):
+        self.password_hash = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
+    def check_password(self, password: str) -> bool:
+        return bcrypt.checkpw(password.encode("utf-8"), self.password_hash.encode("utf-8"))
 
 class Tarea(SQLModel, table=True):
     __tablename__: str = "tarea"
@@ -14,6 +22,8 @@ class Tarea(SQLModel, table=True):
     description: str = ""
     status: str = Field(default="pendiente")
     priority: str = Field(default="media")
+    category: str = Field(default="general")
+    due_date: datetime | None = Field(default=None)
     teacher: str = Field(default="")
     task_date: str = Field(default="")
     task_time: str = Field(default="")

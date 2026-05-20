@@ -1,21 +1,15 @@
-from fastapi import APIRouter, Depends, HTTPException, Body
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
 from ..database import get_session
 from ..models import Tarea
-from typing import Dict, Any
+from ..schemas import TaskCreate, TaskUpdate
+from typing import List
 
 router = APIRouter()
 
-@router.post("/tasks")
-def create_task(task_data: Dict[str, Any] = Body(...), session: Session = Depends(get_session)):
-    # Asegurar que el status inicial sea pendiente si no viene en el body
-    if "status" not in task_data:
-        task_data["status"] = "pendiente"
-    
-    # Filtramos solo los campos que pertenecen al modelo Tarea
-    valid_data = {k: v for k, v in task_data.items() if hasattr(Tarea, k)}
-    new_task = Tarea(**valid_data)
-    
+@router.post("/tasks", status_code=status.HTTP_201_CREATED)
+def create_task(task: TaskCreate, session: Session = Depends(get_session)):
+    new_task = Tarea(**task.model_dump())
     session.add(new_task)
     session.commit()
     session.refresh(new_task)
@@ -29,20 +23,22 @@ def tasks_root():
 @router.get("/tasks/{user_id}")
 def get_tasks(user_id: int, session: Session = Depends(get_session)):
     statement = select(Tarea).where(Tarea.user_id == user_id).order_by(
-        Tarea.status.desc(),  # Pendientes arriba (alfabéticamente 'pendiente' > 'completada')
+        Tarea.status.asc(),
         Tarea.created_at.desc()
     )
     tasks = session.exec(statement).all()
     return tasks
 
 @router.put("/tasks/{task_id}")
-def update_task(task_id: int, task_data: Dict[str, Any] = Body(...), session: Session = Depends(get_session)):
+def update_task(task_id: int, task_update: TaskUpdate, session: Session = Depends(get_session)):
     db_task = session.get(Tarea, task_id)
     if not db_task:
-        raise HTTPException(status_code=404, detail="No encontrada")
-    for key, value in task_data.items():
-        if hasattr(db_task, key):
-            setattr(db_task, key, value)
+        raise HTTPException(status_code=404, detail="Tarea no encontrada")
+    
+    update_data = task_update.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(db_task, key, value)
+    
     session.add(db_task)
     session.commit()
     session.refresh(db_task)
@@ -52,8 +48,8 @@ def update_task(task_id: int, task_data: Dict[str, Any] = Body(...), session: Se
 def delete_task(task_id: int, session: Session = Depends(get_session)):
     task = session.get(Tarea, task_id)
     if not task:
-        raise HTTPException(status_code=404, detail="No encontrada")
+        raise HTTPException(status_code=404, detail="Tarea no encontrada")
 
     session.delete(task)
     session.commit()
-    return {"message": "Eliminada"}
+    return {"message": "Tarea eliminada"}
