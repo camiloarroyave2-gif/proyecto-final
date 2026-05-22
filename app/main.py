@@ -1,7 +1,10 @@
 import os
 from contextlib import asynccontextmanager
+from dotenv import load_dotenv
 import uvicorn
 from fastapi import FastAPI, Depends, HTTPException, status, Body
+
+load_dotenv()
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse

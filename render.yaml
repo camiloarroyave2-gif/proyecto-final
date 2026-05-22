@@ -1,3 +1,9 @@
+databases:
+  - name: taskflow-db
+    plan: free
+    region: ohio
+    postgresMajorVersion: 16
+
 services:
   - type: web
     name: taskflow
@@ -7,3 +13,8 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: 3.11
+      - key: DATABASE_URL
+        fromService:
+          type: postgresql
+          name: taskflow-db
+          property: connectionString
