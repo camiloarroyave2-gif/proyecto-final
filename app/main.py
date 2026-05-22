@@ -13,6 +13,7 @@ from .database import create_db, get_session
 from .models import Usuario, Tarea
 from .schemas import UserCreate, UserLogin
 from .routes import tasks
+from .routes import subtasks
 from typing import List
 
 USUARIOS_VALIDOS = {
@@ -130,3 +131,4 @@ def get_profile(user_id: int, session: Session = Depends(get_session)):
     }
 
 app.include_router(tasks.router, prefix="/api", tags=["Tareas"])
+app.include_router(subtasks.router, prefix="/api", tags=["Subtareas"])

@@ -1,4 +1,4 @@
-from sqlmodel import SQLModel, Field
+from sqlmodel import SQLModel, Field, Relationship
 from datetime import datetime
 import bcrypt
 
@@ -24,9 +24,18 @@ class Tarea(SQLModel, table=True):
     priority: str = Field(default="media")
     category: str = Field(default="general")
     due_date: datetime | None = Field(default=None)
-    teacher: str = Field(default="")
     task_date: str = Field(default="")
     task_time: str = Field(default="")
     academic_year: str = Field(default="")
     created_at: datetime = Field(default_factory=datetime.utcnow)
     user_id: int = Field(foreign_key="usuario.id", index=True)
+    subtareas: list["Subtarea"] = Relationship(back_populates="tarea")
+
+
+class Subtarea(SQLModel, table=True):
+    __tablename__: str = "subtarea"
+    id: int | None = Field(default=None, primary_key=True)
+    title: str = Field(nullable=False)
+    completed: bool = Field(default=False)
+    task_id: int = Field(foreign_key="tarea.id", index=True)
+    tarea: Tarea = Relationship(back_populates="subtareas")

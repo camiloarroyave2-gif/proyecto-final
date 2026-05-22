@@ -34,7 +34,6 @@ class TaskCreate(BaseModel):
     priority: Optional[str] = "media"
     category: Optional[str] = "general"
     due_date: Optional[datetime] = None
-    teacher: Optional[str] = ""
     task_date: Optional[str] = ""
     task_time: Optional[str] = ""
     academic_year: Optional[str] = ""
@@ -47,3 +46,11 @@ class TaskUpdate(BaseModel):
     priority: Optional[str] = None
     category: Optional[str] = None
     due_date: Optional[datetime] = None
+
+class SubtaskCreate(BaseModel):
+    title: str
+    task_id: int
+
+class SubtaskUpdate(BaseModel):
+    title: Optional[str] = None
+    completed: Optional[bool] = None

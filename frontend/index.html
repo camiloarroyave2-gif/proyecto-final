@@ -588,6 +588,103 @@
         .btn-task-toggle { color: var(--lime); border-color: rgba(184,255,63,0.3); }
         .btn-task-toggle:hover { background: var(--lime-dim); border-color: var(--lime); color: var(--lime); }
 
+        .subtask-section {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border);
+        }
+        .subtask-header {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 8px;
+        }
+        .subtask-list { list-style: none; padding: 0; }
+        .subtask-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 4px 0;
+            transition: var(--transition);
+        }
+        .subtask-item:hover .subtask-delete { opacity: 1; }
+        .subtask-checkbox {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 16px; height: 16px;
+            border: 2px solid var(--text-muted);
+            border-radius: 4px;
+            cursor: pointer;
+            flex-shrink: 0;
+            position: relative;
+            transition: var(--transition);
+        }
+        .subtask-checkbox:checked {
+            background: var(--lime);
+            border-color: var(--lime);
+        }
+        .subtask-checkbox::after {
+            content: '✓';
+            position: absolute;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--bg);
+            opacity: 0;
+        }
+        .subtask-checkbox:checked::after { opacity: 1; }
+        .subtask-title {
+            font-size: 13px;
+            color: var(--text-dim);
+            flex: 1;
+        }
+        .subtask-title.done { text-decoration: line-through; opacity: 0.5; }
+        .subtask-delete {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            cursor: pointer;
+            font-size: 14px;
+            padding: 2px 4px;
+            opacity: 0;
+            transition: var(--transition);
+        }
+        .subtask-delete:hover { color: var(--danger); }
+        .subtask-add-form {
+            display: flex;
+            gap: 8px;
+            margin-top: 6px;
+        }
+        .subtask-add-input {
+            flex: 1;
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            border-radius: 6px;
+            color: var(--text);
+            font-family: var(--font-body);
+            font-size: 13px;
+            padding: 6px 10px;
+            outline: none;
+            transition: var(--transition);
+        }
+        .subtask-add-input:focus { border-color: var(--lime); }
+        .subtask-add-btn {
+            background: var(--lime-dim);
+            border: 1px solid var(--border);
+            color: var(--lime);
+            border-radius: 6px;
+            padding: 6px 12px;
+            cursor: pointer;
+            font-size: 13px;
+            font-family: var(--font-body);
+            transition: var(--transition);
+        }
+        .subtask-add-btn:hover { background: var(--lime); color: var(--bg); }
+
         .dashboard-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -843,10 +940,6 @@
                         <div class="input-group flex-grow">
                             <label for="description" class="input-label">Descripción (opcional)</label>
                             <input type="text" id="description" placeholder="Añade detalles..." maxlength="250">
-                        </div>
-                        <div class="input-group">
-                            <label for="teacher" class="input-label">Profesor</label>
-                            <input type="text" id="teacher" placeholder="Nombre del profesor" maxlength="100">
                         </div>
                         <div class="input-group" style="width:160px;">
                             <label for="dueDate" class="input-label">Fecha límite</label>

@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
+from sqlalchemy.orm import selectinload
 from ..database import get_session
-from ..models import Tarea
+from ..models import Tarea, Subtarea
 from ..schemas import TaskCreate, TaskUpdate
 from typing import List
 
@@ -22,7 +23,9 @@ def tasks_root():
 
 @router.get("/tasks/{user_id}")
 def get_tasks(user_id: int, session: Session = Depends(get_session)):
-    statement = select(Tarea).where(Tarea.user_id == user_id).order_by(
+    statement = select(Tarea).where(Tarea.user_id == user_id).options(
+        selectinload(Tarea.subtareas)
+    ).order_by(
         Tarea.status.asc(),
         Tarea.created_at.desc()
     )
@@ -50,6 +53,9 @@ def delete_task(task_id: int, session: Session = Depends(get_session)):
     if not task:
         raise HTTPException(status_code=404, detail="Tarea no encontrada")
 
+    subtasks = session.exec(select(Subtarea).where(Subtarea.task_id == task_id)).all()
+    for st in subtasks:
+        session.delete(st)
     session.delete(task)
     session.commit()
     return {"message": "Tarea eliminada"}

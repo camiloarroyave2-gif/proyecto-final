@@ -152,7 +152,6 @@ async function createTask() {
     const priorityInput = document.getElementById("priority");
     const categoryInput = document.getElementById("category");
     const dueDateInput = document.getElementById("dueDate");
-    const teacherInput = document.getElementById("teacher");
     const dateInput = document.getElementById("task_date");
     const timeInput = document.getElementById("task_time");
     const yearInput = document.getElementById("academic_year");
@@ -162,7 +161,6 @@ async function createTask() {
     const priority = priorityInput ? priorityInput.value : "media";
     const category = categoryInput ? categoryInput.value : "general";
     const due_date = dueDateInput && dueDateInput.value ? new Date(dueDateInput.value).toISOString() : null;
-    const teacher = teacherInput ? teacherInput.value.trim() : "";
     const task_date = dateInput ? dateInput.value : "";
     const task_time = timeInput ? timeInput.value : "";
     const academic_year = yearInput ? yearInput.value.trim() : "";
@@ -182,7 +180,6 @@ async function createTask() {
                 priority,
                 category,
                 due_date,
-                teacher,
                 task_date,
                 task_time,
                 academic_year,
@@ -194,7 +191,6 @@ async function createTask() {
             titleInput.value = "";
             descInput.value = "";
             if (dueDateInput) dueDateInput.value = "";
-            if (teacherInput) teacherInput.value = "";
             if (dateInput) dateInput.value = "";
             if (timeInput) timeInput.value = "";
             if (yearInput) yearInput.value = "";
@@ -317,6 +313,47 @@ function getFilteredTasks() {
     return allTasks.filter(t => t.category === currentFilter);
 }
 
+/* ── SUBTASKS ── */
+async function addSubtask(taskId, inputEl) {
+    const title = inputEl.value.trim();
+    if (!title) return;
+    try {
+        await fetch(`${API}/api/subtasks`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ title, task_id: taskId })
+        });
+        inputEl.value = "";
+        showToast("Subtarea añadida", "success");
+        loadTasks();
+    } catch {
+        showTaskMessage("Error al añadir subtarea", "error");
+    }
+}
+
+async function toggleSubtask(subtaskId, completed) {
+    try {
+        await fetch(`${API}/api/subtasks/${subtaskId}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ completed })
+        });
+        loadTasks();
+    } catch {
+        showTaskMessage("Error al actualizar subtarea", "error");
+    }
+}
+
+async function deleteSubtask(subtaskId) {
+    try {
+        await fetch(`${API}/api/subtasks/${subtaskId}`, { method: "DELETE" });
+        showToast("Subtarea eliminada", "success");
+        loadTasks();
+    } catch {
+        showTaskMessage("Error al eliminar subtarea", "error");
+    }
+}
+
 /* ── RENDER ── */
 function renderTasks() {
     const list = document.getElementById("taskList");
@@ -366,11 +403,19 @@ function renderTaskItem(task) {
     const dueDate = task.due_date ? new Date(task.due_date).toLocaleDateString() : null;
     const category = task.category || "general";
     
-    const teacherInfo = task.teacher ? `👨‍🏫 ${escapeHtml(task.teacher)}` : '';
     const taskDateInfo = task.task_date ? `📅 ${task.task_date}` : '';
     const taskTimeInfo = task.task_time ? `🕐 ${task.task_time}` : '';
     const yearInfo = task.academic_year ? `📚 ${task.academic_year}` : '';
     
+    const subtasks = task.subtareas || [];
+    const subtaskHtml = subtasks.map(st => `
+        <li class="subtask-item" data-subtask-id="${st.id}">
+            <input type="checkbox" class="subtask-checkbox" ${st.completed ? 'checked' : ''}>
+            <span class="subtask-title ${st.completed ? 'done' : ''}">${escapeHtml(st.title)}</span>
+            <button class="subtask-delete" title="Eliminar subtarea">✕</button>
+        </li>
+    `).join('');
+
     li.innerHTML = `
         <div class="priority-indicator priority-${task.priority || 'media'}"></div>
         <div class="task-check-wrap">
@@ -386,10 +431,17 @@ function renderTaskItem(task) {
                 ${dueDate ? `<span class="task-date" style="color:var(--warning);">→ ${dueDate}</span>` : ''}
             </div>
             <div class="task-meta" style="margin-top:4px;">
-                ${teacherInfo ? `<span class="task-date" style="color:var(--text-dim);">${teacherInfo}</span>` : ''}
                 ${taskDateInfo ? `<span class="task-date" style="color:var(--text-dim);">${taskDateInfo}</span>` : ''}
                 ${taskTimeInfo ? `<span class="task-date" style="color:var(--text-dim);">${taskTimeInfo}</span>` : ''}
                 ${yearInfo ? `<span class="task-date" style="color:var(--text-dim);">${yearInfo}</span>` : ''}
+            </div>
+            <div class="subtask-section">
+                <div class="subtask-header">Subtareas (${subtasks.filter(s => s.completed).length}/${subtasks.length})</div>
+                <ul class="subtask-list">${subtaskHtml}</ul>
+                <div class="subtask-add-form">
+                    <input type="text" class="subtask-add-input" placeholder="Nueva subtarea..." maxlength="100">
+                    <button class="subtask-add-btn">+</button>
+                </div>
             </div>
         </div>
         <div class="task-actions">
@@ -401,6 +453,21 @@ function renderTaskItem(task) {
     li.querySelector(".task-checkbox").onchange = () => toggleTask(task.id, nextStatus);
     li.querySelector(".btn-task-toggle").onclick = () => toggleTask(task.id, nextStatus);
     li.querySelector(".btn-delete").onclick = () => deleteTask(task.id);
+
+    const addForm = li.querySelector(".subtask-add-form");
+    const addInput = addForm.querySelector(".subtask-add-input");
+    const addBtn = addForm.querySelector(".subtask-add-btn");
+    addBtn.onclick = () => addSubtask(task.id, addInput);
+    addInput.addEventListener("keydown", e => {
+        if (e.key === "Enter") addSubtask(task.id, addInput);
+    });
+
+    li.querySelectorAll(".subtask-item").forEach(item => {
+        const cb = item.querySelector(".subtask-checkbox");
+        const stId = parseInt(item.dataset.subtaskId);
+        cb.onchange = () => toggleSubtask(stId, cb.checked);
+        item.querySelector(".subtask-delete").onclick = () => deleteSubtask(stId);
+    });
 
     return li;
 }
