@@ -32,11 +32,14 @@ class TaskCreate(BaseModel):
     description: Optional[str] = ""
     status: Optional[str] = "pendiente"
     priority: Optional[str] = "media"
-    category: Optional[str] = "general"
+    category: Optional[str] = "personal"
+    teacher: Optional[str] = ""
     due_date: Optional[datetime] = None
     task_date: Optional[str] = ""
     task_time: Optional[str] = ""
     academic_year: Optional[str] = ""
+    subject: Optional[str] = ""
+    location: Optional[str] = ""
     user_id: int
 
 class TaskUpdate(BaseModel):
@@ -45,7 +48,10 @@ class TaskUpdate(BaseModel):
     status: Optional[str] = None
     priority: Optional[str] = None
     category: Optional[str] = None
+    teacher: Optional[str] = None
     due_date: Optional[datetime] = None
+    subject: Optional[str] = None
+    location: Optional[str] = None
 
 class SubtaskCreate(BaseModel):
     title: str

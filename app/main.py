@@ -112,7 +112,7 @@ def get_profile(user_id: int, session: Session = Depends(get_session)):
     completadas = len([t for t in tareas if t.status == "completada"])
     por_categoria = {}
     for t in tareas:
-        cat = t.category or "general"
+        cat = t.category or "personal"
         if cat not in por_categoria:
             por_categoria[cat] = {"total": 0, "completadas": 0}
         por_categoria[cat]["total"] += 1

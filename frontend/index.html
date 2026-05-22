@@ -416,6 +416,45 @@
         .btn-create { flex-shrink: 0; padding: 12px 20px; align-self: flex-end; }
         .btn-icon { font-size: 18px; line-height: 1; }
 
+        .category-selector { margin-bottom: 20px; }
+        .category-cards { display: flex; gap: 8px; flex-wrap: wrap; }
+        .cat-card {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 16px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: var(--input-bg);
+            color: var(--text-dim);
+            font-family: var(--font-body);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            flex: 1;
+            min-width: 100px;
+            justify-content: center;
+        }
+        .cat-card:hover {
+            border-color: var(--border-bright);
+            background: var(--lime-dim);
+            color: var(--text);
+        }
+        .cat-card.active {
+            border-color: var(--lime);
+            background: var(--lime-dim);
+            color: var(--lime);
+            box-shadow: 0 0 20px var(--lime-glow);
+        }
+        .cat-card.active[data-category="trabajo"] { border-color: #6495ed; color: #6495ed; box-shadow: 0 0 20px rgba(100,149,237,0.25); }
+        .cat-card.active[data-category="personal"] { border-color: #ffb6c1; color: #ffb6c1; box-shadow: 0 0 20px rgba(255,182,193,0.25); }
+        .cat-card.active[data-category="hogar"] { border-color: #90ee90; color: #90ee90; box-shadow: 0 0 20px rgba(144,238,144,0.25); }
+        .cat-card.active[data-category="academico"] { border-color: #ffd700; color: #ffd700; box-shadow: 0 0 20px rgba(255,215,0,0.25); }
+        .cat-icon { font-size: 18px; line-height: 1; }
+        .cat-label { font-family: var(--font-mono); font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; }
+        .cat-field { animation: fadeSlideIn 0.25s ease both; }
+
         .filter-bar {
             display: flex;
             gap: 8px;
@@ -548,11 +587,10 @@
             text-transform: uppercase;
             letter-spacing: 0.05em;
         }
-        .category-general { background: var(--lime-dim); color: var(--lime); }
-        .category-trabajo { background: rgba(100,149,237,0.15); color: #6495ed; }
         .category-personal { background: rgba(255,182,193,0.15); color: #ffb6c1; }
-        .category-estudio { background: rgba(255,215,0,0.15); color: #ffd700; }
+        .category-trabajo { background: rgba(100,149,237,0.15); color: #6495ed; }
         .category-hogar { background: rgba(144,238,144,0.15); color: #90ee90; }
+        .category-academico { background: rgba(255,215,0,0.15); color: #ffd700; }
 
         .priority-indicator {
             width: 4px;
@@ -911,12 +949,65 @@
 
             <div class="task-form-card">
                 <h3>Nueva Tarea</h3>
+
+                <div class="category-selector">
+                    <label class="input-label">Tipo de tarea</label>
+                  <div class="category-cards">
+    <button type="button" class="cat-card active" data-category="personal" onclick="selectCategory('personal')">
+        <span class="cat-icon">👤</span>
+        <span class="cat-label">Personal</span>
+    </button>
+    <button type="button" class="cat-card" data-category="hogar" onclick="selectCategory('hogar')">
+        <span class="cat-icon">🏠</span>
+        <span class="cat-label">Hogar</span>
+    </button>
+    <button type="button" class="cat-card" data-category="trabajo" onclick="selectCategory('trabajo')">
+        <span class="cat-icon">💼</span>
+        <span class="cat-label">Trabajo</span>
+    </button>
+    <button type="button" class="cat-card" data-category="academico" onclick="selectCategory('academico')">
+        <span class="cat-icon">📚</span>
+        <span class="cat-label">Académico</span>
+    </button>
+</div>
+                </div>
+
                 <form onsubmit="return false;" class="task-form">
                     <div class="form-row">
                         <div class="input-group flex-grow">
                             <label for="title" class="input-label">Título</label>
                             <input type="text" id="title" placeholder="¿Qué necesitas hacer?" maxlength="100">
                         </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="input-group flex-grow">
+                            <label for="description" class="input-label">Descripción (opcional)</label>
+                            <input type="text" id="description" placeholder="Añade detalles..." maxlength="250">
+                        </div>
+                    </div>
+
+                    <div id="locationField" class="form-row" style="display:none">
+                        <div class="input-group flex-grow">
+                            <label for="task_location" class="input-label" id="locationLabel">Ubicación</label>
+                            <input type="text" id="task_location" placeholder="..." maxlength="100">
+                        </div>
+                    </div>
+                    <div id="studyFields" class="form-row" style="display:none">
+                        <div class="input-group flex-grow">
+                            <label for="task_teacher" class="input-label">Profesor</label>
+                            <input type="text" id="task_teacher" placeholder="Ej: Dr. García" maxlength="100">
+                        </div>
+                        <div class="input-group flex-grow">
+                            <label for="task_subject" class="input-label">Materia / Curso</label>
+                            <input type="text" id="task_subject" placeholder="Ej: Matemáticas" maxlength="100">
+                        </div>
+                        <div class="input-group" style="width:150px;">
+                            <label for="academic_year" class="input-label">Año académico</label>
+                            <input type="text" id="academic_year" placeholder="2026" maxlength="4">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
                         <div class="input-group" style="width:140px;">
                             <label for="priority" class="input-label">Prioridad</label>
                             <select id="priority">
@@ -925,28 +1016,10 @@
                                 <option value="alta">Alta</option>
                             </select>
                         </div>
-                        <div class="input-group" style="width:150px;">
-                            <label for="category" class="input-label">Categoría</label>
-                            <select id="category">
-                                <option value="general">General</option>
-                                <option value="trabajo">Trabajo</option>
-                                <option value="personal">Personal</option>
-                                <option value="estudio">Estudio</option>
-                                <option value="hogar">Hogar</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="input-group flex-grow">
-                            <label for="description" class="input-label">Descripción (opcional)</label>
-                            <input type="text" id="description" placeholder="Añade detalles..." maxlength="250">
-                        </div>
                         <div class="input-group" style="width:160px;">
                             <label for="dueDate" class="input-label">Fecha límite</label>
                             <input type="date" id="dueDate">
                         </div>
-                    </div>
-                    <div class="form-row">
                         <div class="input-group">
                             <label for="task_date" class="input-label">Fecha</label>
                             <input type="date" id="task_date">
@@ -954,10 +1027,6 @@
                         <div class="input-group">
                             <label for="task_time" class="input-label">Hora</label>
                             <input type="time" id="task_time">
-                        </div>
-                        <div class="input-group">
-                            <label for="academic_year" class="input-label">Año académico</label>
-                            <input type="text" id="academic_year" placeholder="Ej: 2026" maxlength="4">
                         </div>
                         <button onclick="createTask()" class="btn btn-primary btn-create">
                             <span class="btn-icon">+</span>
@@ -1006,8 +1075,10 @@
                         <button class="filter-chip" data-filter="pendiente">Pendientes</button>
                         <button class="filter-chip" data-filter="completada">Completadas</button>
                         <button class="filter-chip" data-filter="alta">Alta prioridad</button>
-                        <button class="filter-chip" data-filter="trabajo">Trabajo</button>
                         <button class="filter-chip" data-filter="personal">Personal</button>
+                        <button class="filter-chip" data-filter="hogar">Hogar</button>
+                        <button class="filter-chip" data-filter="trabajo">Trabajo</button>
+                        <button class="filter-chip" data-filter="academico">Académico</button>
                     </div>
                 </div>
                 <ul id="taskList" class="task-list">

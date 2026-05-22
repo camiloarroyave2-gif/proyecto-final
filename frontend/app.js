@@ -51,6 +51,7 @@ function showApp() {
     document.getElementById("appSection").classList.remove("hidden");
     document.getElementById("userStatus").classList.remove("hidden");
     document.getElementById("userEmail").textContent = currentEmail;
+    selectCategory('personal');
     loadTasks();
 }
 
@@ -140,6 +141,40 @@ function logout() {
     showAuth();
 }
 
+/* ── CATEGORY SELECTOR ── */
+let currentCategory = "personal";
+
+function selectCategory(cat) {
+    currentCategory = cat;
+    document.querySelectorAll(".cat-card").forEach(c => c.classList.remove("active"));
+    document.querySelector(`.cat-card[data-category="${cat}"]`).classList.add("active");
+
+    const locField = document.getElementById("locationField");
+    const locLabel = document.getElementById("locationLabel");
+    const locInput = document.getElementById("task_location");
+    if (cat === "trabajo") {
+        locField.style.display = "flex";
+        locLabel.textContent = "Empresa / Proyecto";
+        locInput.placeholder = "Ej: Acme Corp";
+    } else if (cat === "hogar") {
+        locField.style.display = "flex";
+        locLabel.textContent = "Área / Habitación";
+        locInput.placeholder = "Ej: Cocina";
+    } else {
+        locField.style.display = "none";
+    }
+
+    document.getElementById("studyFields").style.display = cat === "academico" ? "flex" : "none";
+
+    if (["personal", "hogar", "trabajo", "academico"].includes(cat)) {
+        currentFilter = cat;
+        document.querySelectorAll(".filter-chip").forEach(c => c.classList.remove("active"));
+        const chip = document.querySelector(`.filter-chip[data-filter="${cat}"]`);
+        if (chip) chip.classList.add("active");
+        renderTasks();
+    }
+}
+
 /* ── TASKS ── */
 async function createTask() {
     if (!userId) {
@@ -150,20 +185,25 @@ async function createTask() {
     const titleInput = document.getElementById("title");
     const descInput = document.getElementById("description");
     const priorityInput = document.getElementById("priority");
-    const categoryInput = document.getElementById("category");
     const dueDateInput = document.getElementById("dueDate");
     const dateInput = document.getElementById("task_date");
     const timeInput = document.getElementById("task_time");
     const yearInput = document.getElementById("academic_year");
+    const subjectInput = document.getElementById("task_subject");
+    const teacherInput = document.getElementById("task_teacher");
+    const locationInput = document.getElementById("task_location");
 
     const title = titleInput.value.trim();
     const description = descInput.value.trim();
     const priority = priorityInput ? priorityInput.value : "media";
-    const category = categoryInput ? categoryInput.value : "general";
+    const category = currentCategory;
     const due_date = dueDateInput && dueDateInput.value ? new Date(dueDateInput.value).toISOString() : null;
     const task_date = dateInput ? dateInput.value : "";
     const task_time = timeInput ? timeInput.value : "";
     const academic_year = yearInput ? yearInput.value.trim() : "";
+    const subject = subjectInput ? subjectInput.value.trim() : "";
+    const teacher = teacherInput ? teacherInput.value.trim() : "";
+    const location = locationInput ? locationInput.value.trim() : "";
 
     if (!title) {
         showTaskMessage("El título es obligatorio", "error");
@@ -183,6 +223,9 @@ async function createTask() {
                 task_date,
                 task_time,
                 academic_year,
+                subject,
+                teacher,
+                location,
                 user_id: userId 
             })
         });
@@ -194,6 +237,9 @@ async function createTask() {
             if (dateInput) dateInput.value = "";
             if (timeInput) timeInput.value = "";
             if (yearInput) yearInput.value = "";
+            if (subjectInput) subjectInput.value = "";
+            if (teacherInput) teacherInput.value = "";
+            if (locationInput) locationInput.value = "";
             showToast("Tarea creada exitosamente", "success");
             loadTasks();
         } else {
@@ -219,6 +265,24 @@ async function toggleTask(id, newStatus) {
         showTaskMessage("Error al actualizar", "error");
     }
     loadTasks();
+}
+
+const CATEGORIES = ["personal", "hogar", "trabajo", "academico"];
+
+async function updateTaskCategory(id, newCategory) {
+    try {
+        const res = await fetch(`${API}/api/tasks/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ category: newCategory })
+        });
+        if (res.ok) {
+            showToast(`Categoría cambiada a ${newCategory}`, "success");
+            loadTasks();
+        }
+    } catch {
+        showTaskMessage("Error al cambiar categoría", "error");
+    }
 }
 
 async function deleteTask(id) {
@@ -272,7 +336,7 @@ function updateStats(tasks) {
     const highPriority = tasks.filter(t => t.priority === "alta" && t.status !== "completada").length;
     document.getElementById("highPriorityCount").textContent = highPriority;
     
-    const categories = new Set(tasks.map(t => t.category || "general"));
+    const categories = new Set(tasks.map(t => t.category || "personal"));
     document.getElementById("categoryCount").textContent = categories.size;
 }
 
@@ -297,10 +361,15 @@ function setupFilters() {
     const filterBar = document.getElementById("filterBar");
     filterBar.addEventListener("click", (e) => {
         if (e.target.classList.contains("filter-chip")) {
-            filterBar.querySelectorAll(".filter-chip").forEach(c => c.classList.remove("active"));
-            e.target.classList.add("active");
-            currentFilter = e.target.dataset.filter;
-            renderTasks();
+            const filter = e.target.dataset.filter;
+            if (["personal", "hogar", "trabajo", "academico"].includes(filter)) {
+                selectCategory(filter);
+            } else {
+                filterBar.querySelectorAll(".filter-chip").forEach(c => c.classList.remove("active"));
+                e.target.classList.add("active");
+                currentFilter = filter;
+                renderTasks();
+            }
         }
     });
 }
@@ -401,11 +470,14 @@ function renderTaskItem(task) {
     const nextStatus = isDone ? 'pendiente' : 'completada';
     const date = task.created_at ? new Date(task.created_at).toLocaleDateString() : '';
     const dueDate = task.due_date ? new Date(task.due_date).toLocaleDateString() : null;
-    const category = task.category || "general";
+    const category = task.category || "personal";
     
     const taskDateInfo = task.task_date ? `📅 ${task.task_date}` : '';
     const taskTimeInfo = task.task_time ? `🕐 ${task.task_time}` : '';
     const yearInfo = task.academic_year ? `📚 ${task.academic_year}` : '';
+    const subjectInfo = task.subject ? `📖 ${task.subject}` : '';
+    const teacherInfo = task.teacher ? `👨‍🏫 ${task.teacher}` : '';
+    const locationInfo = task.location ? `📍 ${task.location}` : '';
     
     const subtasks = task.subtareas || [];
     const subtaskHtml = subtasks.map(st => `
@@ -425,7 +497,7 @@ function renderTaskItem(task) {
             <div class="task-title">${escapeHtml(task.title)}</div>
             <div class="task-description">${escapeHtml(task.description || '')}</div>
             <div class="task-meta">
-                <span class="category-badge category-${category}">${category}</span>
+                <span class="category-badge category-${category}" style="cursor:pointer" title="Click para cambiar categoría">${category}</span>
                 <span class="task-date" style="color:var(--lime);opacity:0.8;">${task.priority}</span>
                 <span class="task-date">${date}</span>
                 ${dueDate ? `<span class="task-date" style="color:var(--warning);">→ ${dueDate}</span>` : ''}
@@ -433,6 +505,9 @@ function renderTaskItem(task) {
             <div class="task-meta" style="margin-top:4px;">
                 ${taskDateInfo ? `<span class="task-date" style="color:var(--text-dim);">${taskDateInfo}</span>` : ''}
                 ${taskTimeInfo ? `<span class="task-date" style="color:var(--text-dim);">${taskTimeInfo}</span>` : ''}
+                ${teacherInfo ? `<span class="task-date" style="color:var(--text-dim);">${teacherInfo}</span>` : ''}
+                ${subjectInfo ? `<span class="task-date" style="color:var(--text-dim);">${subjectInfo}</span>` : ''}
+                ${locationInfo ? `<span class="task-date" style="color:var(--text-dim);">${locationInfo}</span>` : ''}
                 ${yearInfo ? `<span class="task-date" style="color:var(--text-dim);">${yearInfo}</span>` : ''}
             </div>
             <div class="subtask-section">
@@ -453,6 +528,11 @@ function renderTaskItem(task) {
     li.querySelector(".task-checkbox").onchange = () => toggleTask(task.id, nextStatus);
     li.querySelector(".btn-task-toggle").onclick = () => toggleTask(task.id, nextStatus);
     li.querySelector(".btn-delete").onclick = () => deleteTask(task.id);
+    li.querySelector(".category-badge").onclick = () => {
+        const idx = CATEGORIES.indexOf(task.category || "personal");
+        const nextCat = CATEGORIES[(idx + 1) % CATEGORIES.length];
+        updateTaskCategory(task.id, nextCat);
+    };
 
     const addForm = li.querySelector(".subtask-add-form");
     const addInput = addForm.querySelector(".subtask-add-input");
@@ -483,6 +563,10 @@ function escapeHtml(text) {
 document.addEventListener('DOMContentLoaded', () => {
     loadTheme();
     setupFilters();
+    selectCategory('personal');
     document.getElementById('password')?.addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
     document.getElementById('title')?.addEventListener('keydown', e => { if (e.key === 'Enter') createTask(); });
+    document.getElementById('task_subject')?.addEventListener('keydown', e => { if (e.key === 'Enter') createTask(); });
+    document.getElementById('task_teacher')?.addEventListener('keydown', e => { if (e.key === 'Enter') createTask(); });
+    document.getElementById('task_location')?.addEventListener('keydown', e => { if (e.key === 'Enter') createTask(); });
 });
