@@ -7,15 +7,26 @@ let allTasks = [];
 /* ── TOAST NOTIFICATIONS ── */
 function showToast(message, type = "success") {
     const container = document.getElementById("toastContainer");
+    const icons = { success: "✓", error: "✕", info: "ℹ" };
     const toast = document.createElement("div");
     toast.className = `toast toast-${type}`;
-    toast.innerHTML = `<span class="toast-icon">${type === "success" ? "✓" : "✕"}</span><span>${message}</span>`;
+    toast.innerHTML = `<span class="toast-icon">${icons[type] || "ℹ"}</span><span>${message}</span>`;
     container.appendChild(toast);
+    gsapRipple(toast);
     
     setTimeout(() => {
         toast.classList.add("toast-out");
         setTimeout(() => toast.remove(), 300);
     }, 3000);
+}
+
+function gsapRipple(el) {
+    const ripple = document.createElement("span");
+    ripple.style.cssText = `position:absolute;border-radius:50%;background:rgba(184,255,63,0.15);pointer-events:none;width:10px;height:10px;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);animation:rippleAnim 0.6s ease-out forwards;`;
+    el.style.position = "relative";
+    el.style.overflow = "hidden";
+    el.appendChild(ripple);
+    setTimeout(() => ripple.remove(), 600);
 }
 
 /* ── THEME TOGGLE ── */
@@ -47,11 +58,22 @@ function showTaskMessage(text, type = "error") {
 
 /* ── NAVIGATION ── */
 function showApp() {
+    const appSection = document.getElementById("appSection");
+    appSection.style.opacity = "0";
+    appSection.style.transform = "translateY(20px)";
     document.getElementById("authSection").classList.add("hidden");
-    document.getElementById("appSection").classList.remove("hidden");
+    appSection.classList.remove("hidden");
     document.getElementById("userStatus").classList.remove("hidden");
     document.getElementById("userEmail").textContent = currentEmail;
     selectCategory('personal');
+    requestAnimationFrame(() => {
+        appSection.style.transition = "opacity 0.5s ease, transform 0.5s ease";
+        appSection.style.opacity = "1";
+        appSection.style.transform = "translateY(0)";
+    });
+    setTimeout(() => {
+        document.querySelectorAll(".stat-card").forEach(c => c.classList.add("stagger"));
+    }, 100);
     loadTasks();
 }
 
@@ -63,6 +85,10 @@ function showAuth() {
     document.getElementById("password").value = "";
     userId = null;
     currentEmail = "";
+    document.getElementById("authSection").querySelector(".auth-card").style.animation = "none";
+    requestAnimationFrame(() => {
+        document.getElementById("authSection").querySelector(".auth-card").style.animation = "cardIn 0.7s cubic-bezier(0.22, 1, 0.36, 1) both";
+    });
 }
 
 /* ── AUTH ── */
@@ -146,8 +172,12 @@ let currentCategory = "personal";
 
 function selectCategory(cat) {
     currentCategory = cat;
-    document.querySelectorAll(".cat-card").forEach(c => c.classList.remove("active"));
-    document.querySelector(`.cat-card[data-category="${cat}"]`).classList.add("active");
+    document.querySelectorAll(".cat-card").forEach(c => { c.classList.remove("active"); c.style.transform = ""; });
+    const activeCard = document.querySelector(`.cat-card[data-category="${cat}"]`);
+    activeCard.classList.add("active");
+    activeCard.style.transition = "transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)";
+    activeCard.style.transform = "scale(1.05)";
+    setTimeout(() => { activeCard.style.transform = "scale(1.02)"; }, 300);
 
     const locField = document.getElementById("locationField");
     const locLabel = document.getElementById("locationLabel");
@@ -250,7 +280,18 @@ async function createTask() {
     }
 }
 
-async function toggleTask(id, newStatus) {
+async function toggleTask(id, newStatus, liEl) {
+    if (liEl) {
+        liEl.style.transition = "all 0.3s ease";
+        if (newStatus === "completada") {
+            liEl.classList.add("completing");
+            liEl.style.transform = "scale(0.98)";
+            liEl.style.opacity = "0.7";
+        } else {
+            liEl.style.transform = "scale(1.02)";
+            liEl.style.opacity = "1";
+        }
+    }
     try {
         const res = await fetch(`${API}/api/tasks/${id}`, {
             method: "PUT",
@@ -259,10 +300,14 @@ async function toggleTask(id, newStatus) {
         });
 
         if (res.ok) {
-            showToast(newStatus === "completada" ? "Tarea completada" : "Tarea reabierta", "success");
+            showToast(newStatus === "completada" ? "✨ Tarea completada" : "↩ Tarea reabierta", "success");
+            if (liEl) {
+                setTimeout(() => { liEl.style.transform = ""; liEl.style.opacity = ""; }, 200);
+            }
         }
     } catch {
         showTaskMessage("Error al actualizar", "error");
+        if (liEl) { liEl.style.transform = ""; liEl.style.opacity = ""; }
     }
     loadTasks();
 }
@@ -285,10 +330,19 @@ async function updateTaskCategory(id, newCategory) {
     }
 }
 
-async function deleteTask(id) {
+async function deleteTask(id, liEl) {
+    if (liEl) {
+        liEl.classList.add("removing");
+        try { await fetch(`${API}/api/tasks/${id}`, { method: "DELETE" }); } catch {}
+        setTimeout(() => {
+            showToast("🗑 Tarea eliminada", "info");
+            loadTasks();
+        }, 300);
+        return;
+    }
     try {
         await fetch(`${API}/api/tasks/${id}`, { method: "DELETE" });
-        showToast("Tarea eliminada", "success");
+        showToast("🗑 Tarea eliminada", "info");
     } catch {
         showTaskMessage("Error al eliminar", "error");
     }
@@ -450,13 +504,23 @@ async function loadTasks() {
     if (!userId) return;
 
     const list = document.getElementById("taskList");
-    list.innerHTML = `<li style="padding:40px;text-align:center"><div class="loading-dots"><span></span><span></span><span></span></div></li>`;
+    list.innerHTML = `
+        <li style="padding:40px;text-align:center">
+            <div style="display:flex;flex-direction:column;gap:12px;max-width:400px;margin:0 auto;">
+                <div class="skeleton skeleton-line long"></div>
+                <div class="skeleton skeleton-line"></div>
+                <div class="skeleton skeleton-line short"></div>
+                <div class="skeleton skeleton-line long" style="margin-top:8px;"></div>
+                <div class="skeleton skeleton-line"></div>
+            </div>
+        </li>`;
 
     try {
         const res = await fetch(`${API}/api/tasks/${userId}`);
         allTasks = await res.json();
         updateStats(allTasks);
         renderTasks();
+        document.querySelectorAll(".stat-card").forEach(c => c.classList.add("stagger"));
     } catch {
         list.innerHTML = `<li class="empty-state"><span class="empty-icon">⚠️</span><p>Error al cargar tareas</p></li>`;
     }
@@ -525,9 +589,9 @@ function renderTaskItem(task) {
         </div>
     `;
 
-    li.querySelector(".task-checkbox").onchange = () => toggleTask(task.id, nextStatus);
-    li.querySelector(".btn-task-toggle").onclick = () => toggleTask(task.id, nextStatus);
-    li.querySelector(".btn-delete").onclick = () => deleteTask(task.id);
+    li.querySelector(".task-checkbox").onchange = () => toggleTask(task.id, nextStatus, li);
+    li.querySelector(".btn-task-toggle").onclick = () => toggleTask(task.id, nextStatus, li);
+    li.querySelector(".btn-delete").onclick = () => deleteTask(task.id, li);
     li.querySelector(".category-badge").onclick = () => {
         const idx = CATEGORIES.indexOf(task.category || "personal");
         const nextCat = CATEGORIES[(idx + 1) % CATEGORIES.length];
