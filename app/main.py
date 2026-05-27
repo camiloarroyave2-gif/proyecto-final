@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from sqlmodel import Session, select
-from .database import create_db, get_session
+from .database import run_migrations, get_session
 from .models import Usuario, Tarea
 from .schemas import UserCreate, UserLogin
 from .routes import tasks
@@ -23,7 +23,7 @@ USUARIOS_VALIDOS = {
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    create_db()
+    run_migrations()
     from sqlmodel import Session as DBSession, select
     from .database import engine
     with DBSession(engine) as session:
