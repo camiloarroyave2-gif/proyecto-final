@@ -6,7 +6,7 @@ from alembic import command
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
-    DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/taskflow"
+    DATABASE_URL = "postgresql://postgres:postgres@localhost:5433/taskflow"
     print("=" * 60)
     print("⚠ ADVERTENCIA: DATABASE_URL no está configurada.")
     print("  Usando valor por defecto local. En Render esto NO funcionará.")
@@ -20,7 +20,7 @@ host_part = DATABASE_URL.split("@")[-1].split("?")[0] if "@" in DATABASE_URL els
 print(f"Conectando a base de datos: {host_part}")
 
 connect_args = {}
-if "sslmode" not in DATABASE_URL:
+if "sslmode" not in DATABASE_URL and "localhost" not in DATABASE_URL and "127.0.0.1" not in DATABASE_URL:
     connect_args["sslmode"] = "require"
 
 engine = create_engine(DATABASE_URL, echo=False, pool_pre_ping=True, connect_args=connect_args)

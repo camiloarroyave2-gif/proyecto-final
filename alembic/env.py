@@ -15,7 +15,7 @@ import app.models
 
 config = context.config
 
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/taskflow")
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5433/taskflow")
 if DATABASE_URL and DATABASE_URL.startswith("postgres://"):
     DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 config.set_main_option("sqlalchemy.url", DATABASE_URL)
@@ -41,7 +41,7 @@ def run_migrations_offline() -> None:
 def run_migrations_online() -> None:
     cfg = config.get_section(config.config_ini_section, {})
     cfg["sqlalchemy.url"] = DATABASE_URL
-    if "sslmode" not in DATABASE_URL:
+    if "sslmode" not in DATABASE_URL and "localhost" not in DATABASE_URL and "127.0.0.1" not in DATABASE_URL:
         cfg.setdefault("sqlalchemy.connect_args", {"sslmode": "require"})
     connectable = engine_from_config(
         cfg,
