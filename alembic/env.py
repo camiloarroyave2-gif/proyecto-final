@@ -15,12 +15,7 @@ import app.models
 
 config = context.config
 
-BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DB_DIR = os.path.join(BASE_DIR, "data")
-os.makedirs(DB_DIR, exist_ok=True)
-sqlite_path = os.path.join(DB_DIR, "database.db")
-sqlite_url = f"sqlite:///{sqlite_path}"
-DATABASE_URL = os.getenv("DATABASE_URL", sqlite_url)
+DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://postgres:postgres@localhost:5432/taskflow")
 config.set_main_option("sqlalchemy.url", DATABASE_URL)
 
 if config.config_file_name is not None:

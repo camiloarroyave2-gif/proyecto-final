@@ -6,7 +6,7 @@ Aplicación web full-stack para la gestión de tareas con autenticación segura,
 
 - **Backend**: FastAPI, SQLModel, SQLAlchemy, bcrypt, python-multipart
 - **Frontend**: HTML5, CSS3 (vanilla con variables CSS y tema claro/oscuro), JavaScript (vanilla)
-- **Base de datos**: SQLite (desarrollo) / PostgreSQL (producción)
+- **Base de datos**: PostgreSQL
 - **Servidor**: Uvicorn (ASGI)
 - **Infraestructura**: Render (despliegue), GitHub Actions (CI)
 
@@ -31,7 +31,7 @@ Aplicación web full-stack para la gestión de tareas con autenticación segura,
 ├── app/                        # Backend (FastAPI)
 │   ├── __init__.py
 │   ├── main.py                 # Configuración principal, auth, profile, lifespan
-│   ├── database.py             # Configuración de base de datos (SQLite / PostgreSQL)
+│   ├── database.py             # Configuración de base de datos (PostgreSQL)
 │   ├── models.py               # Modelos SQLModel (Usuario, Tarea, Subtarea)
 │   ├── schemas.py              # Esquemas Pydantic (request/response)
 │   └── routes/
@@ -42,7 +42,7 @@ Aplicación web full-stack para la gestión de tareas con autenticación segura,
 ├── frontend/                   # Frontend estático
 │   ├── index.html              # Interfaz principal (SPA)
 │   └── app.js                  # Lógica del cliente (fetch, render, filtros)
-├── data/                       # Base de datos SQLite (auto-generada)
+├── data/                       # Base de datos local (auto-generada)
 ├── tests/
 │   └── unit/
 │       └── test_basic.py       # Tests unitarios básicos
@@ -80,24 +80,17 @@ Copia `.env.example` a `.env` y ajusta las variables:
 HOST=0.0.0.0
 PORT=8000
 
-# Para PostgreSQL (producción):
-# DATABASE_URL=postgresql://usuario:password@host:5432/taskflow
-# Para SQLite (local, por defecto):
-# DATABASE_URL=sqlite:///./data/database.db
+# Base de datos PostgreSQL
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/taskflow
 ```
 
-Por defecto usa SQLite en `data/database.db`. En producción (`render.yaml`) se conecta automáticamente a PostgreSQL.
+La aplicación usa PostgreSQL. Asegúrate de tener PostgreSQL corriendo (local o con Docker).
 
 ### Usuarios preconfigurados
 
 El sistema arranca con usuarios predefinidos en `app/main.py`:
 
-| Correo | Contraseña |
-|--------|-----------|
-| camilo.arroyave2@utp.edu.co | camilo2006_RZ |
-| ca9126864@gmail.com | 54321 |
-
-Nuevos registros solo se permiten para estos correos preautorizados.
+Nuevos registros solo se permiten para correos preautorizados definidos en `app/main.py`.
 
 ## Ejecución
 
