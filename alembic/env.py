@@ -39,8 +39,11 @@ def run_migrations_offline() -> None:
 
 
 def run_migrations_online() -> None:
+    cfg = config.get_section(config.config_ini_section, {})
+    if "sslmode" not in DATABASE_URL:
+        cfg.setdefault("sqlalchemy.connect_args", '{"sslmode": "require"}')
     connectable = engine_from_config(
-        config.get_section(config.config_ini_section, {}),
+        cfg,
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
