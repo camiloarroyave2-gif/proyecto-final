@@ -1,17 +1,15 @@
-#!/usr/bin/env bash
-set -e
-
-echo "=== Verificando imports ==="
+#!/bin/sh
+echo "=== CHECKING IMPORTS ==="
 python -c "
-import sys
+import sys, traceback
 try:
     from app.main import app
-    print('✓ App imported successfully')
-except Exception as e:
-    import traceback
+    print('OK: app imported')
+    sys.stdout.flush()
+except Exception:
     traceback.print_exc()
+    sys.stdout.flush()
     sys.exit(1)
 "
-
-echo "=== Iniciando servidor ==="
-exec python -m uvicorn app.main:app --host 0.0.0.0 --port "${PORT:-8000}"
+echo "=== STARTING UVICORN ==="
+python -m uvicorn app.main:app --host 0.0.0.0 --port "${PORT:-8000}"
