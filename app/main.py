@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, JSONResponse
 from sqlmodel import Session, select
-from .database import run_migrations, get_session, engine
+from .database import run_migrations, get_session, engine, DATABASE_URL
 from .models import Usuario, Tarea
 from .schemas import UserCreate, UserLogin
 from .routes import tasks, subtasks
@@ -25,6 +25,8 @@ async def lifespan(app: FastAPI):
             traceback.print_exc()
             if attempt < 4:
                 time.sleep(5)
+    host = DATABASE_URL.split("@")[-1].split("?")[0] if "@" in DATABASE_URL else DATABASE_URL
+    print(f"=== SERVER READY - DB: {host} ===")
     yield
 
 app = FastAPI(title="TaskFlow — Gestión Inteligente de Tareas", lifespan=lifespan)
