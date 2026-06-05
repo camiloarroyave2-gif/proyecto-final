@@ -1,28 +1,30 @@
-import os
+import os, time, traceback
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
-import uvicorn
-from fastapi import FastAPI, Depends, HTTPException, status, Body
-
-load_dotenv()
+from fastapi import FastAPI, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from sqlmodel import Session, select
-from .database import run_migrations, get_session
+from .database import run_migrations, get_session, engine
 from .models import Usuario, Tarea
 from .schemas import UserCreate, UserLogin
-from .routes import tasks
-from .routes import subtasks
-from typing import List
+from .routes import tasks, subtasks
+
+load_dotenv()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    try:
-        run_migrations()
-        print("=== MIGRATIONS OK ===")
-    except Exception as e:
-        print(f"=== MIGRATIONS ERROR (non-fatal): {e} ===")
+    for attempt in range(5):
+        try:
+            run_migrations()
+            print("=== MIGRATIONS OK ===")
+            break
+        except Exception as e:
+            print(f"=== MIGRATIONS attempt {attempt+1}/5 failed: {e} ===")
+            traceback.print_exc()
+            if attempt < 4:
+                time.sleep(5)
     yield
 
 app = FastAPI(title="TaskFlow — Gestión Inteligente de Tareas", lifespan=lifespan)
@@ -43,7 +45,14 @@ app.add_middleware(
 
 @app.get("/health")
 def health():
-    return {"status": "ok"}
+    db_ok = False
+    try:
+        with Session(engine) as s:
+            s.exec(select(1))
+            db_ok = True
+    except Exception as e:
+        print(f"Health check DB error: {e}")
+    return {"status": "ok", "database": db_ok}
 
 @app.get("/")
 def read_root():
@@ -54,19 +63,17 @@ def read_root():
 
 @app.get("/favicon.ico", include_in_schema=False)
 async def favicon():
-    return FileResponse(os.path.join(FRONTEND_DIR, "favicon.ico")) if os.path.exists(os.path.join(FRONTEND_DIR, "favicon.ico")) else None
+    path = os.path.join(FRONTEND_DIR, "favicon.ico")
+    return FileResponse(path) if os.path.exists(path) else None
 
-@app.post("/api/users", status_code=status.HTTP_201_CREATED, tags=["Auth"])
 @app.post("/api/register", status_code=status.HTTP_201_CREATED, tags=["Auth"])
 def register_user(user: UserCreate, session: Session = Depends(get_session)):
-    existing_user = session.exec(select(Usuario).where(Usuario.correo == user.correo)).first()
-    if existing_user:
+    existing = session.exec(select(Usuario).where(Usuario.correo == user.correo)).first()
+    if existing:
         raise HTTPException(status_code=400, detail="El correo ya está registrado")
-    
     nombre = user.nombre or user.email.split("@")[0]
     new_user = Usuario(nombre=nombre, correo=user.correo)
     new_user.set_password(user.contrasena)
-    
     session.add(new_user)
     session.commit()
     session.refresh(new_user)
@@ -77,7 +84,6 @@ def login(credentials: UserLogin, session: Session = Depends(get_session)):
     user = session.exec(select(Usuario).where(Usuario.correo == credentials.correo)).first()
     if not user or not user.check_password(credentials.contrasena):
         raise HTTPException(status_code=401, detail="Credenciales incorrectas")
-    
     return {"user_id": user.id, "correo": user.correo, "message": "Acceso concedido"}
 
 @app.get("/api/profile/{user_id}", tags=["Perfil"])
@@ -85,7 +91,6 @@ def get_profile(user_id: int, session: Session = Depends(get_session)):
     user = session.get(Usuario, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="Usuario no encontrado")
-    
     tareas = session.exec(select(Tarea).where(Tarea.user_id == user_id)).all()
     total = len(tareas)
     completadas = len([t for t in tareas if t.status == "completada"])
@@ -97,7 +102,6 @@ def get_profile(user_id: int, session: Session = Depends(get_session)):
         por_categoria[cat]["total"] += 1
         if t.status == "completada":
             por_categoria[cat]["completadas"] += 1
-    
     return {
         "nombre": user.nombre,
         "correo": user.correo,

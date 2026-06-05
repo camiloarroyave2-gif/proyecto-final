@@ -132,8 +132,8 @@ async function register() {
             }
             showAuthMessage(errorMsg, "error");
         }
-    } catch {
-        showAuthMessage("No se pudo conectar con el servidor", "error");
+    } catch (err) {
+        showAuthMessage("Error de conexión: " + (err.message || "servidor no disponible"), "error");
     }
 }
 
@@ -164,7 +164,7 @@ async function login() {
         showToast(`Bienvenido, ${email}`, "success");
         showApp();
     } catch {
-        showAuthMessage("No se pudo conectar con el servidor", "error");
+        showAuthMessage("Error de conexión: servidor no disponible", "error");
     }
 }
 
@@ -284,7 +284,7 @@ async function createTask() {
             showTaskMessage("Error al crear la tarea", "error");
         }
     } catch {
-        showTaskMessage("No se pudo conectar con el servidor", "error");
+        showTaskMessage("Error de conexión: servidor no disponible", "error");
     }
 }
 
