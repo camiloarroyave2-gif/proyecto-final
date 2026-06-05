@@ -18,7 +18,11 @@ from typing import List
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    run_migrations()
+    try:
+        run_migrations()
+        print("=== MIGRATIONS OK ===")
+    except Exception as e:
+        print(f"=== MIGRATIONS ERROR (non-fatal): {e} ===")
     yield
 
 app = FastAPI(title="TaskFlow — Gestión Inteligente de Tareas", lifespan=lifespan)
