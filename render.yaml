@@ -7,15 +7,16 @@ databases:
 services:
   - type: web
     name: taskflow
-    runtime: docker
+    runtime: python
     region: ohio
     plan: free
     branch: main
     healthCheckPath: /health
     autoDeploy: true
+    buildCommand: pip install -r requirements.txt
+    startCommand: ./start.sh
     envVars:
       - key: DATABASE_URL
-        fromService:
-          type: postgresql
+        fromDatabase:
           name: taskflow-db
           property: connectionString

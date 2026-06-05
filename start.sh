@@ -12,4 +12,4 @@ except Exception:
     sys.exit(1)
 "
 echo "=== STARTING UVICORN ==="
-python -m uvicorn app.main:app --host 0.0.0.0 --port "${PORT:-8000}"
+uvicorn main:app --host 0.0.0.0 --port "${PORT:-8000}"
