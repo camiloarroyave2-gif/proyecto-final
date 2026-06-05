@@ -8,6 +8,7 @@ services:
   - type: web
     name: taskflow
     runtime: docker
+    envVars:
       - key: DATABASE_URL
         fromService:
           type: postgresql
