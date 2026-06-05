@@ -92,9 +92,15 @@ function showAuth() {
 }
 
 /* ── AUTH ── */
+function showRegisterFields(show) {
+    const group = document.getElementById("nombreGroup");
+    group.style.display = show ? "block" : "none";
+}
+
 async function register() {
     const email = document.getElementById("email").value.trim();
     const password = document.getElementById("password").value;
+    const nombre = document.getElementById("nombre").value.trim();
 
     if (!email || !password) {
         showAuthMessage("Completa todos los campos", "error");
@@ -109,11 +115,13 @@ async function register() {
         const res = await fetch(`${API}/api/register`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, password })
+            body: JSON.stringify({ email, password, nombre: nombre || undefined })
         });
 
         if (res.ok) {
             showToast("¡Cuenta creada! Ya puedes iniciar sesión", "success");
+            showRegisterFields(false);
+            document.getElementById("nombre").value = "";
         } else {
             const data = await res.json();
             let errorMsg = "Error al registrar";
@@ -628,7 +636,12 @@ document.addEventListener('DOMContentLoaded', () => {
     loadTheme();
     setupFilters();
     selectCategory('personal');
+    
+    document.querySelector('.btn-primary')?.addEventListener('click', () => showRegisterFields(false));
+    document.querySelector('.btn-secondary')?.addEventListener('click', () => showRegisterFields(true));
+    
     document.getElementById('password')?.addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
+    document.getElementById('nombre')?.addEventListener('keydown', e => { if (e.key === 'Enter') register(); });
     document.getElementById('title')?.addEventListener('keydown', e => { if (e.key === 'Enter') createTask(); });
     document.getElementById('task_subject')?.addEventListener('keydown', e => { if (e.key === 'Enter') createTask(); });
     document.getElementById('task_teacher')?.addEventListener('keydown', e => { if (e.key === 'Enter') createTask(); });

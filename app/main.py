@@ -16,31 +16,9 @@ from .routes import tasks
 from .routes import subtasks
 from typing import List
 
-USUARIOS_VALIDOS = {
-    "camilo.arroyave2@utp.edu.co": "camilo2006_RZ",
-    "ca9126864@gmail.com": "54321",
-}
-
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     run_migrations()
-    from sqlmodel import Session as DBSession, select
-    from .database import engine
-    with DBSession(engine) as session:
-        for correo, password in USUARIOS_VALIDOS.items():
-            user = session.exec(select(Usuario).where(Usuario.correo == correo)).first()
-            if not user:
-                nombre = correo.split("@")[0]
-                user = Usuario(nombre=nombre, correo=correo)
-                user.set_password(password)
-                session.add(user)
-        otros = session.exec(select(Usuario).where(Usuario.correo.notin_(USUARIOS_VALIDOS.keys()))).all()
-        for u in otros:
-            tareas = session.exec(select(Tarea).where(Tarea.user_id == u.id)).all()
-            for t in tareas:
-                session.delete(t)
-            session.delete(u)
-        session.commit()
     yield
 
 app = FastAPI(title="TaskFlow — Gestión Inteligente de Tareas", lifespan=lifespan)
@@ -77,11 +55,6 @@ async def favicon():
 @app.post("/api/users", status_code=status.HTTP_201_CREATED, tags=["Auth"])
 @app.post("/api/register", status_code=status.HTTP_201_CREATED, tags=["Auth"])
 def register_user(user: UserCreate, session: Session = Depends(get_session)):
-    if user.correo not in USUARIOS_VALIDOS:
-        raise HTTPException(status_code=403, detail="No tienes permiso para registrarte")
-    if user.contrasena != USUARIOS_VALIDOS[user.correo]:
-        raise HTTPException(status_code=403, detail="Contraseña incorrecta para este usuario")
-    
     existing_user = session.exec(select(Usuario).where(Usuario.correo == user.correo)).first()
     if existing_user:
         raise HTTPException(status_code=400, detail="El correo ya está registrado")
@@ -97,8 +70,6 @@ def register_user(user: UserCreate, session: Session = Depends(get_session)):
 
 @app.post("/api/login", tags=["Auth"])
 def login(credentials: UserLogin, session: Session = Depends(get_session)):
-    if credentials.correo not in USUARIOS_VALIDOS:
-        raise HTTPException(status_code=401, detail="Credenciales incorrectas")
     user = session.exec(select(Usuario).where(Usuario.correo == credentials.correo)).first()
     if not user or not user.check_password(credentials.contrasena):
         raise HTTPException(status_code=401, detail="Credenciales incorrectas")
