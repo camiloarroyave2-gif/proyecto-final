@@ -2,12 +2,12 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlmodel import Session, select
 from ..database import get_session
 from ..models import Subtarea
-from ..schemas import SubtaskCreate, SubtaskUpdate
+from ..schemas import SubtaskCreate, SubtaskUpdate, SubtareaOut
 from typing import List
 
 router = APIRouter()
 
-@router.post("/subtasks", status_code=status.HTTP_201_CREATED)
+@router.post("/subtasks", status_code=status.HTTP_201_CREATED, response_model=SubtareaOut)
 def create_subtask(subtask: SubtaskCreate, session: Session = Depends(get_session)):
     new_subtask = Subtarea(**subtask.model_dump())
     session.add(new_subtask)
@@ -15,13 +15,13 @@ def create_subtask(subtask: SubtaskCreate, session: Session = Depends(get_sessio
     session.refresh(new_subtask)
     return new_subtask
 
-@router.get("/tasks/{task_id}/subtasks")
+@router.get("/tasks/{task_id}/subtasks", response_model=List[SubtareaOut])
 def get_subtasks(task_id: int, session: Session = Depends(get_session)):
     statement = select(Subtarea).where(Subtarea.task_id == task_id)
     subtasks = session.exec(statement).all()
     return subtasks
 
-@router.put("/subtasks/{subtask_id}")
+@router.put("/subtasks/{subtask_id}", response_model=SubtareaOut)
 def update_subtask(subtask_id: int, subtask_update: SubtaskUpdate, session: Session = Depends(get_session)):
     db_subtask = session.get(Subtarea, subtask_id)
     if not db_subtask:

@@ -60,3 +60,27 @@ class SubtaskCreate(BaseModel):
 class SubtaskUpdate(BaseModel):
     title: Optional[str] = None
     completed: Optional[bool] = None
+
+class SubtareaOut(BaseModel):
+    id: int
+    title: str
+    completed: bool
+    task_id: int
+
+class TareaOut(BaseModel):
+    id: int
+    title: str
+    description: str = ""
+    status: str = "pendiente"
+    priority: str = "media"
+    category: str = "personal"
+    due_date: Optional[datetime] = None
+    teacher: str = ""
+    task_date: str = ""
+    task_time: str = ""
+    academic_year: str = ""
+    subject: str = ""
+    location: str = ""
+    created_at: datetime
+    user_id: int
+    subtareas: list[SubtareaOut] = []
