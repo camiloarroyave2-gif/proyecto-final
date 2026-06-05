@@ -1,5 +1,5 @@
 #!/bin/sh
-echo "=== CHECKING IMPORTS ==="
+echo "=== INICIANDO TASKFLOW ==="
 python -c "
 import sys, traceback
 try:
