@@ -8,6 +8,11 @@ services:
   - type: web
     name: taskflow
     runtime: docker
+    region: ohio
+    plan: free
+    branch: main
+    healthCheckPath: /health
+    autoDeploy: true
     envVars:
       - key: DATABASE_URL
         fromService:

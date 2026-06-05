@@ -59,6 +59,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
 @app.get("/")
 def read_root():
     index_path = os.path.join(FRONTEND_DIR, "index.html")
