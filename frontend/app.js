@@ -123,12 +123,16 @@ async function register() {
             showRegisterFields(false);
             document.getElementById("nombre").value = "";
         } else {
-            const data = await res.json();
             let errorMsg = "Error al registrar";
-            if (typeof data.detail === "string") {
-                errorMsg = data.detail;
-            } else if (Array.isArray(data.detail)) {
-                errorMsg = data.detail.map(e => e.msg || e.message).join(", ") || errorMsg;
+            try {
+                const data = await res.json();
+                if (typeof data.detail === "string") {
+                    errorMsg = data.detail;
+                } else if (Array.isArray(data.detail)) {
+                    errorMsg = data.detail.map(e => e.msg || e.message).join(", ") || errorMsg;
+                }
+            } catch {
+                errorMsg = `Error del servidor (${res.status})`;
             }
             showAuthMessage(errorMsg, "error");
         }
@@ -154,7 +158,14 @@ async function login() {
         });
 
         if (!res.ok) {
-            showAuthMessage("Credenciales incorrectas", "error");
+            let errorMsg = "Credenciales incorrectas";
+            try {
+                const data = await res.json();
+                if (typeof data.detail === "string") errorMsg = data.detail;
+            } catch {
+                errorMsg = `Error del servidor (${res.status})`;
+            }
+            showAuthMessage(errorMsg, "error");
             return;
         }
 

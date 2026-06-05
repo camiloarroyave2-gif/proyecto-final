@@ -3,19 +3,22 @@ echo "=== STARTING TASKFLOW ==="
 echo "Python: $(python --version)"
 echo "DATABASE_URL: ${DATABASE_URL:+set}"
 
+# Normalizar la URL de la base de datos (postgres:// → postgresql://)
+DATABASE_URL=$(echo "${DATABASE_URL}" | sed 's/^postgres:\/\//postgresql:\/\//')
+export DATABASE_URL
+
 echo "Waiting for database..."
-DB_URL=$(echo "${DATABASE_URL}" | sed 's/^postgres:\/\//postgresql:\/\//')
 DB_READY=0
 for i in $(seq 1 30); do
   if python -c "
 from sqlmodel import create_engine
 try:
-    e = create_engine('${DB_URL}')
+    e = create_engine('${DATABASE_URL}')
     e.connect().close()
     print('ok')
-except Exception:
-    pass
-" 2>/dev/null | grep -q '^ok'; then
+except Exception as exc:
+    print(f'err: {exc}')
+" | grep -q '^ok'; then
     echo "Database ready"
     DB_READY=1
     break

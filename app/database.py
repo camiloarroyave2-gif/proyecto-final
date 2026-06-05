@@ -1,4 +1,4 @@
-import os
+import os, sys
 from sqlmodel import create_engine, Session
 from alembic.config import Config
 from alembic import command

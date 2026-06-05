@@ -1,10 +1,10 @@
 import os, time, traceback
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
-from fastapi import FastAPI, Depends, HTTPException, status
+from fastapi import FastAPI, Depends, HTTPException, status, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, JSONResponse
 from sqlmodel import Session, select
 from .database import run_migrations, get_session, engine
 from .models import Usuario, Tarea
@@ -28,6 +28,21 @@ async def lifespan(app: FastAPI):
     yield
 
 app = FastAPI(title="TaskFlow — Gestión Inteligente de Tareas", lifespan=lifespan)
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    traceback.print_exc()
+    return JSONResponse(
+        status_code=500,
+        content={"detail": f"Error interno del servidor: {str(exc)}"}
+    )
+
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail}
+    )
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FRONTEND_DIR = os.path.join(BASE_DIR, "frontend")
