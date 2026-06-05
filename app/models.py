@@ -1,5 +1,5 @@
+from datetime import datetime, timezone
 from sqlmodel import SQLModel, Field, Relationship
-from datetime import datetime
 import bcrypt
 
 class Usuario(SQLModel, table=True):
@@ -30,7 +30,7 @@ class Tarea(SQLModel, table=True):
     academic_year: str = Field(default="")
     subject: str = Field(default="")
     location: str = Field(default="")
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     user_id: int = Field(foreign_key="usuario.id", index=True)
     subtareas: list["Subtarea"] = Relationship(back_populates="tarea")
 
